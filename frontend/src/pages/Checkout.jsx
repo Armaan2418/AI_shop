@@ -1,0 +1,378 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectCartItems, selectCartTotal, clearCart } from '../store/cartSlice';
+import { selectUser } from '../store/authSlice';
+import { cartService } from '../services/cartService';
+import './Checkout.css';
+
+const STEPS = ['Shipping', 'Payment', 'Review'];
+
+export default function Checkout() {
+  const dispatch  = useDispatch();
+  const navigate  = useNavigate();
+  const items     = useSelector(selectCartItems);
+  const totals    = useSelector(selectCartTotal);
+  const user      = useSelector(selectUser);
+
+  const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [shipping, setShipping] = useState({
+    fullName: user?.name || '',
+    email:    user?.email || '',
+    phone:    '',
+    address:  '',
+    city:     '',
+    state:    '',
+    zip:      '',
+    country:  'India',
+  });
+
+  const [payment, setPayment] = useState({
+    method:     'card',
+    cardNumber: '',
+    cardName:   '',
+    expiry:     '',
+    cvv:        '',
+  });
+
+  const [saveAddress, setSaveAddress] = useState(true);
+
+  const updateShipping = (field, val) => setShipping(s => ({ ...s, [field]: val }));
+  const updatePayment  = (field, val) => setPayment(p  => ({ ...p, [field]: val }));
+
+  const validateShipping = () => {
+    const { fullName, email, address, city, state, zip } = shipping;
+    if (!fullName || !email || !address || !city || !state || !zip) {
+      setError('Please fill in all required fields.');
+      return false;
+    }
+    setError('');
+    return true;
+  };
+
+  const validatePayment = () => {
+    if (payment.method === 'card') {
+      if (!payment.cardNumber || !payment.cardName || !payment.expiry || !payment.cvv) {
+        setError('Please fill in all card details.');
+        return false;
+      }
+    }
+    setError('');
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step === 0 && !validateShipping()) return;
+    if (step === 1 && !validatePayment())  return;
+    setStep(s => s + 1);
+    window.scrollTo(0, 0);
+  };
+
+  const handlePlaceOrder = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const orderData = {
+        items: items.map(i => ({ product: i._id, quantity: i.quantity, price: i.price })),
+        shippingAddress: shipping,
+        paymentMethod: payment.method,
+        subtotal:  totals.subtotal,
+        discount:  totals.discount,
+        tax:       totals.tax,
+        total:     totals.total,
+      };
+      const data = await cartService.placeOrder(orderData);
+      dispatch(clearCart());
+      navigate('/order-success', { state: { orderId: data?.order?._id || 'ORD-' + Date.now() } });
+    } catch {
+      // Mock success for now
+      dispatch(clearCart());
+      navigate('/order-success', { state: { orderId: 'ORD-' + Date.now() } });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCard = (val) => val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+  const formatExpiry = (val) => {
+    const clean = val.replace(/\D/g, '').slice(0, 4);
+    return clean.length >= 3 ? clean.slice(0, 2) + '/' + clean.slice(2) : clean;
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="checkout-page page-enter">
+        <div className="container">
+          <div className="empty-state" style={{ minHeight: '60vh' }}>
+            <div className="empty-state-icon">🛒</div>
+            <div className="empty-state-title">Your cart is empty</div>
+            <Link to="/products" className="btn btn-primary btn-lg mt-md">Shop Now →</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="checkout-page page-enter">
+      <div className="container">
+
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <Link to="/">Home</Link><span className="sep">›</span>
+          <Link to="/cart">Cart</Link><span className="sep">›</span>
+          <span className="current">Checkout</span>
+        </div>
+
+        <h1 className="checkout-heading">Checkout</h1>
+
+        {/* Stepper */}
+        <div className="checkout-stepper">
+          {STEPS.map((label, i) => (
+            <div key={label} className="checkout-step-item">
+              <div className={`checkout-step-circle ${i < step ? 'done' : i === step ? 'active' : ''}`}>
+                {i < step ? '✓' : i + 1}
+              </div>
+              <span className={`checkout-step-label ${i === step ? 'active' : ''}`}>{label}</span>
+              {i < STEPS.length - 1 && <div className={`checkout-step-line ${i < step ? 'done' : ''}`} />}
+            </div>
+          ))}
+        </div>
+
+        <div className="checkout-layout">
+
+          {/* ── Left: Form ── */}
+          <div className="checkout-form-col">
+
+            {/* STEP 0: Shipping */}
+            {step === 0 && (
+              <div className="checkout-section">
+                <h2 className="checkout-section-title">📦 Shipping Address</h2>
+                {error && <div className="auth-alert auth-alert--error mb-md"><span>⚠️</span> {error}</div>}
+
+                <div className="checkout-form-grid">
+                  <div className="form-group checkout-span-2">
+                    <label className="form-label">Full Name *</label>
+                    <input className="form-input" placeholder="John Doe" value={shipping.fullName} onChange={e => updateShipping('fullName', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email *</label>
+                    <input className="form-input" type="email" placeholder="you@email.com" value={shipping.email} onChange={e => updateShipping('email', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Phone</label>
+                    <input className="form-input" placeholder="+91 98765 43210" value={shipping.phone} onChange={e => updateShipping('phone', e.target.value)} />
+                  </div>
+                  <div className="form-group checkout-span-2">
+                    <label className="form-label">Street Address *</label>
+                    <input className="form-input" placeholder="123 Main Street, Apt 4B" value={shipping.address} onChange={e => updateShipping('address', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">City *</label>
+                    <input className="form-input" placeholder="Mumbai" value={shipping.city} onChange={e => updateShipping('city', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">State *</label>
+                    <input className="form-input" placeholder="Maharashtra" value={shipping.state} onChange={e => updateShipping('state', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">PIN Code *</label>
+                    <input className="form-input" placeholder="400001" value={shipping.zip} onChange={e => updateShipping('zip', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Country</label>
+                    <select className="form-select" value={shipping.country} onChange={e => updateShipping('country', e.target.value)}>
+                      <option>India</option><option>USA</option><option>UK</option><option>Canada</option><option>Australia</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label className="checkbox-wrapper mt-md">
+                  <input type="checkbox" checked={saveAddress} onChange={e => setSaveAddress(e.target.checked)} />
+                  <span className="checkbox-label">Save this address for future orders</span>
+                </label>
+              </div>
+            )}
+
+            {/* STEP 1: Payment */}
+            {step === 1 && (
+              <div className="checkout-section">
+                <h2 className="checkout-section-title">💳 Payment Method</h2>
+                {error && <div className="auth-alert auth-alert--error mb-md"><span>⚠️</span> {error}</div>}
+
+                {/* Method selector */}
+                <div className="payment-methods">
+                  {[
+                    { value: 'card', label: 'Credit / Debit Card', icon: '💳' },
+                    { value: 'upi',  label: 'UPI',                 icon: '📲' },
+                    { value: 'cod',  label: 'Cash on Delivery',    icon: '💵' },
+                  ].map(m => (
+                    <label key={m.value} className={`payment-method-card ${payment.method === m.value ? 'payment-method-card--active' : ''}`}>
+                      <input type="radio" name="paymentMethod" value={m.value} checked={payment.method === m.value} onChange={() => updatePayment('method', m.value)} />
+                      <span className="payment-method-icon">{m.icon}</span>
+                      <span className="payment-method-label">{m.label}</span>
+                      {payment.method === m.value && <span className="payment-method-check">✓</span>}
+                    </label>
+                  ))}
+                </div>
+
+                {/* Card fields */}
+                {payment.method === 'card' && (
+                  <div className="card-fields">
+                    <div className="form-group">
+                      <label className="form-label">Card Number</label>
+                      <div className="input-wrapper">
+                        <span className="input-icon-left">💳</span>
+                        <input
+                          className="form-input has-icon-left"
+                          placeholder="1234 5678 9012 3456"
+                          value={payment.cardNumber}
+                          onChange={e => updatePayment('cardNumber', formatCard(e.target.value))}
+                          maxLength={19}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Cardholder Name</label>
+                      <input className="form-input" placeholder="Name on card" value={payment.cardName} onChange={e => updatePayment('cardName', e.target.value)} />
+                    </div>
+                    <div className="checkout-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                      <div className="form-group">
+                        <label className="form-label">Expiry Date</label>
+                        <input className="form-input" placeholder="MM/YY" value={payment.expiry} onChange={e => updatePayment('expiry', formatExpiry(e.target.value))} maxLength={5} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">CVV</label>
+                        <input className="form-input" placeholder="•••" type="password" value={payment.cvv} onChange={e => updatePayment('cvv', e.target.value.slice(0, 4))} maxLength={4} />
+                      </div>
+                    </div>
+                    <div className="card-secure-note">
+                      🔒 Your card details are encrypted and never stored on our servers
+                    </div>
+                  </div>
+                )}
+
+                {payment.method === 'upi' && (
+                  <div className="upi-section">
+                    <div className="form-group">
+                      <label className="form-label">UPI ID</label>
+                      <input className="form-input" placeholder="yourname@upi" />
+                    </div>
+                    <p style={{ fontSize: 13, color: 'var(--slate)' }}>You'll receive a payment request on your UPI app after placing the order.</p>
+                  </div>
+                )}
+
+                {payment.method === 'cod' && (
+                  <div className="cod-note">
+                    <span style={{ fontSize: 24 }}>💵</span>
+                    <div>
+                      <strong>Cash on Delivery</strong>
+                      <p>Pay when your order arrives. Available for orders under ₹10,000.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 2: Review */}
+            {step === 2 && (
+              <div className="checkout-section">
+                <h2 className="checkout-section-title">✅ Review Your Order</h2>
+
+                {/* Shipping summary */}
+                <div className="review-block">
+                  <div className="review-block__header">
+                    <span className="review-block__title">📦 Shipping to</span>
+                    <button className="review-block__edit" onClick={() => setStep(0)}>Edit</button>
+                  </div>
+                  <p className="review-block__content">
+                    {shipping.fullName}<br />
+                    {shipping.address}, {shipping.city}, {shipping.state} {shipping.zip}<br />
+                    {shipping.country} · {shipping.phone || shipping.email}
+                  </p>
+                </div>
+
+                {/* Payment summary */}
+                <div className="review-block">
+                  <div className="review-block__header">
+                    <span className="review-block__title">💳 Payment</span>
+                    <button className="review-block__edit" onClick={() => setStep(1)}>Edit</button>
+                  </div>
+                  <p className="review-block__content">
+                    {payment.method === 'card'
+                      ? `Card ending in ${payment.cardNumber.slice(-4) || '????'}`
+                      : payment.method === 'upi' ? 'UPI Payment' : 'Cash on Delivery'
+                    }
+                  </p>
+                </div>
+
+                {/* Items */}
+                <div className="review-items">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="review-item">
+                      <span className="review-item__qty">{item.quantity}×</span>
+                      <span className="review-item__name">{item.name}</span>
+                      <span className="review-item__price">${(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {error && <div className="auth-alert auth-alert--error mt-md"><span>⚠️</span> {error}</div>}
+              </div>
+            )}
+
+            {/* Navigation buttons */}
+            <div className="checkout-nav-btns">
+              {step > 0 && (
+                <button className="btn btn-outline btn-lg" onClick={() => setStep(s => s - 1)}>← Back</button>
+              )}
+              {step < 2 ? (
+                <button className="btn btn-primary btn-lg" style={{ marginLeft: 'auto' }} onClick={handleNext}>
+                  Continue →
+                </button>
+              ) : (
+                <button
+                  className={`btn btn-green btn-lg ${loading ? 'btn-loading' : ''}`}
+                  style={{ marginLeft: 'auto' }}
+                  onClick={handlePlaceOrder}
+                  disabled={loading}
+                >
+                  {loading ? <span className="btn-text">Placing Order…</span> : '🎉 Place Order'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ── Right: Order summary ── */}
+          <div className="checkout-summary-col">
+            <div className="cart-summary-card">
+              <h3 className="cart-summary-title">Order Summary</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                {items.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--slate)' }}>
+                    <span className="truncate" style={{ maxWidth: 180 }}>{item.quantity}× {item.name}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--primary)', flexShrink: 0, marginLeft: 8 }}>
+                      ${(item.price * item.quantity).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="cart-summary-divider" />
+              <div className="cart-summary-rows">
+                <div className="cart-summary-row"><span>Subtotal</span><span>${totals.subtotal.toFixed(2)}</span></div>
+                {totals.discount > 0 && <div className="cart-summary-row cart-summary-row--green"><span>Discount</span><span>−${totals.discount.toFixed(2)}</span></div>}
+                <div className="cart-summary-row"><span>Shipping</span><span className="cart-free-ship">{totals.subtotal >= 50 ? 'Free' : '$9.99'}</span></div>
+                <div className="cart-summary-row"><span>Tax</span><span>${totals.tax.toFixed(2)}</span></div>
+              </div>
+              <div className="cart-summary-divider" />
+              <div className="cart-summary-total"><span>Total</span><span>${totals.total.toFixed(2)}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,228 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectUser } from '../store/authSlice';
+import { logout } from '../store/authSlice';
+import { cartService } from '../services/cartService';
+import './Dashboard.css';
+
+const MOCK_ORDERS = [
+  { _id: 'ORD-8821', date: '2026-03-20', status: 'Delivered',  total: 1249, items: ['iPhone 15 Pro Max'] },
+  { _id: 'ORD-8754', date: '2026-03-10', status: 'Shipped',    total: 349,  items: ['Sony WH-1000XM5'] },
+  { _id: 'ORD-8601', date: '2026-02-28', status: 'Processing', total: 799,  items: ['Apple Watch Ultra 2'] },
+  { _id: 'ORD-8422', date: '2026-02-10', status: 'Delivered',  total: 249,  items: ['AirPods Pro 2'] },
+];
+
+const STATUS_COLOR = {
+  Delivered:  'badge-green',
+  Shipped:    'badge-blue',
+  Processing: 'badge-yellow',
+  Cancelled:  'badge-red',
+};
+
+const TABS = ['Overview', 'Orders', 'Wishlist', 'Settings'];
+
+export default function Dashboard() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const user     = useSelector(selectUser);
+
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [orders,    setOrders]    = useState(MOCK_ORDERS);
+  const [loading,   setLoading]   = useState(false);
+
+  const [profile, setProfile] = useState({
+    name:  user?.name  || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await cartService.getOrders();
+        if (data?.orders?.length) setOrders(data.orders);
+      } catch (err) { /* use mock */ }
+      finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+  };
+
+  const totalSpent = orders.reduce((s, o) => s + o.total, 0);
+
+  return (
+    <div className="dashboard-page page-enter">
+      <div className="container">
+
+        {/* Header */}
+        <div className="dashboard-header">
+          <div className="dashboard-header__left">
+            <div className="dashboard-avatar">
+              {user?.name?.[0]?.toUpperCase() ?? '👤'}
+            </div>
+            <div>
+              <h1 className="dashboard-greeting">Welcome back, {user?.name?.split(' ')[0] ?? 'there'}! 👋</h1>
+              <p style={{ color: 'var(--slate)', fontSize: 14 }}>{user?.email}</p>
+            </div>
+          </div>
+          <button className="btn btn-outline btn-sm" onClick={handleLogout}>🚪 Logout</button>
+        </div>
+
+        {/* Stats */}
+        <div className="dashboard-stats">
+          {[
+            { icon: '📦', label: 'Total Orders',   value: orders.length },
+            { icon: '💰', label: 'Total Spent',    value: `$${totalSpent.toLocaleString()}` },
+            { icon: '🚚', label: 'In Transit',     value: orders.filter(o => o.status === 'Shipped').length },
+            { icon: '❤️', label: 'Wishlist Items', value: 0 },
+          ].map(s => (
+            <div key={s.label} className="dashboard-stat-card">
+              <span className="dashboard-stat-icon">{s.icon}</span>
+              <span className="dashboard-stat-value">{s.value}</span>
+              <span className="dashboard-stat-label">{s.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs */}
+        <div className="tabs">
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Overview Tab ── */}
+        {activeTab === 'Overview' && (
+          <div className="dashboard-tab-content">
+            <h3 className="dash-section-title">Recent Orders</h3>
+            <div className="orders-table-wrap">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.slice(0, 3).map(order => (
+                    <tr key={order._id}>
+                      <td><span className="order-id-cell">{order._id}</span></td>
+                      <td>{new Date(order.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td>{order.items?.[0]}{order.items?.length > 1 && ` +${order.items.length - 1} more`}</td>
+                      <td><strong>${order.total}</strong></td>
+                      <td><span className={`badge ${STATUS_COLOR[order.status] || 'badge-gray'}`}>{order.status}</span></td>
+                      <td>
+                        <Link to={`/dashboard/orders/${order._id}`} className="btn btn-outline btn-sm">
+                          Track →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {orders.length > 3 && (
+              <button className="btn btn-ghost btn-sm mt-md" onClick={() => setActiveTab('Orders')}>
+                View all {orders.length} orders →
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Orders Tab ── */}
+        {activeTab === 'Orders' && (
+          <div className="dashboard-tab-content">
+            <h3 className="dash-section-title">All Orders</h3>
+            {loading ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--slate)' }}>Loading orders…</div>
+            ) : orders.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📦</div>
+                <div className="empty-state-title">No orders yet</div>
+                <Link to="/products" className="btn btn-primary mt-md">Shop Now →</Link>
+              </div>
+            ) : (
+              <div className="orders-cards">
+                {orders.map(order => (
+                  <div key={order._id} className="order-card">
+                    <div className="order-card__left">
+                      <div className="order-card__icon">📦</div>
+                      <div>
+                        <p className="order-card__id">{order._id}</p>
+                        <p className="order-card__items">{order.items?.join(', ')}</p>
+                        <p className="order-card__date">{new Date(order.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <div className="order-card__right">
+                      <strong className="order-card__total">${order.total}</strong>
+                      <span className={`badge ${STATUS_COLOR[order.status] || 'badge-gray'}`}>{order.status}</span>
+                      <Link to={`/dashboard/orders/${order._id}`} className="btn btn-outline btn-sm">Track</Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Wishlist Tab ── */}
+        {activeTab === 'Wishlist' && (
+          <div className="dashboard-tab-content">
+            <div className="empty-state">
+              <div className="empty-state-icon">❤️</div>
+              <div className="empty-state-title">Your wishlist is empty</div>
+              <div className="empty-state-text">Save items you love and find them here anytime.</div>
+              <Link to="/products" className="btn btn-primary mt-md">Browse Products →</Link>
+            </div>
+          </div>
+        )}
+
+        {/* ── Settings Tab ── */}
+        {activeTab === 'Settings' && (
+          <div className="dashboard-tab-content">
+            <div className="settings-section">
+              <h3 className="dash-section-title">Profile Information</h3>
+              <div className="settings-form">
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input className="form-input" value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email Address</label>
+                  <input className="form-input" type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone Number</label>
+                  <input className="form-input" type="tel" value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 43210" />
+                </div>
+                <button className="btn btn-primary">Save Changes</button>
+              </div>
+            </div>
+
+            <div className="settings-section" style={{ marginTop: 32 }}>
+              <h3 className="dash-section-title" style={{ color: 'var(--red)' }}>Danger Zone</h3>
+              <button className="btn btn-red btn-sm" onClick={handleLogout}>🚪 Logout from all devices</button>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}

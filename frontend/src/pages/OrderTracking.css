@@ -1,0 +1,145 @@
+.tracking-page { padding: 32px 0 80px; }
+
+.tracking-heading {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tracking-id-badge {
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--light);
+  color: var(--slate);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-family: monospace;
+}
+
+.tracking-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+
+/* Status card */
+.tracking-status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #EFF6FF, #F0FDF4);
+  border: 1.5px solid #BFDBFE;
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 28px;
+}
+.tracking-status-icon  { font-size: 36px; flex-shrink: 0; }
+.tracking-status-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--slate); margin-bottom: 2px; }
+.tracking-status-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+.tracking-status-time  { font-size: 13px; color: var(--slate); margin-top: 2px; }
+.tracking-status-card .badge { margin-left: auto; }
+
+/* Timeline */
+.tracking-timeline { padding: 8px 0; }
+
+.track-step {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+
+.track-step__left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.track-step__dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--slate);
+  z-index: 1;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.track-step--done .track-step__dot {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--white);
+}
+
+.track-step--current .track-step__dot {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--white);
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
+}
+
+.track-step__line {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+  min-height: 40px;
+  transition: background 0.3s ease;
+}
+.track-step__line--done { background: var(--green); }
+
+.track-step__content {
+  padding-bottom: 28px;
+  flex: 1;
+}
+
+.track-step__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.track-step__icon   { font-size: 16px; }
+.track-step__status { font-size: 15px; font-weight: 600; color: var(--primary); }
+.track-step__time   { font-size: 12px; color: var(--slate); margin-left: auto; }
+.track-step__desc   { font-size: 14px; color: var(--slate); line-height: 1.6; }
+
+.track-step:not(.track-step--done) .track-step__status { color: var(--slate); }
+.track-step:not(.track-step--done) .track-step__desc   { opacity: 0.6; }
+
+/* Sidebar */
+.tracking-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.tracking-card-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 14px; }
+
+.tracking-item { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; }
+.tracking-item__qty  { font-weight: 700; color: var(--slate); width: 24px; }
+.tracking-item__name { flex: 1; color: var(--primary); }
+.tracking-item__price{ font-weight: 700; color: var(--primary); }
+
+.tracking-total { display: flex; justify-content: space-between; font-size: 15px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; color: var(--primary); }
+.tracking-total strong { font-size: 18px; }
+
+.tracking-address { font-size: 14px; color: var(--slate); line-height: 1.8; }
+
+.tracking-actions { display: flex; flex-direction: column; gap: 10px; }
+
+@media (max-width: 768px) {
+  .tracking-layout { grid-template-columns: 1fr; }
+  .tracking-status-card { flex-wrap: wrap; }
+}

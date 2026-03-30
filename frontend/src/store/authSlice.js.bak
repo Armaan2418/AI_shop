@@ -1,0 +1,85 @@
+import { createSlice } from '@reduxjs/toolkit';
+
+// Safely rehydrate from localStorage
+let savedUser  = null;
+let savedToken = null;
+
+try {
+  const raw = localStorage.getItem('aishop_user');
+  savedUser  = raw ? JSON.parse(raw) : null;
+  savedToken = localStorage.getItem('aishop_token') || null;
+} catch (err) {
+  savedUser  = null;
+  savedToken = null;
+}
+
+const initialState = {
+  user:            savedUser,
+  token:           savedToken,
+  isAuthenticated: Boolean(savedToken && savedUser),
+  isVerified:      savedUser?.isVerified ?? false,
+  loading:         false,
+  error:           null,
+};
+
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    loginStart(state) {
+      state.loading = true;
+      state.error   = null;
+    },
+    loginSuccess(state, { payload }) {
+      const { user, token } = payload;
+      state.loading         = false;
+      state.isAuthenticated = true;
+      state.isVerified      = user.isVerified ?? false;
+      state.user            = user;
+      state.token           = token;
+      localStorage.setItem('aishop_token', token);
+      localStorage.setItem('aishop_user',  JSON.stringify(user));
+    },
+    loginFailure(state, { payload }) {
+      state.loading = false;
+      state.error   = payload;
+    },
+    logout(state) {
+      state.user            = null;
+      state.token           = null;
+      state.isAuthenticated = false;
+      state.isVerified      = false;
+      state.error           = null;
+      localStorage.removeItem('aishop_token');
+      localStorage.removeItem('aishop_user');
+    },
+    verifyEmail(state) {
+      state.isVerified = true;
+      if (state.user) {
+        state.user.isVerified = true;
+        localStorage.setItem('aishop_user', JSON.stringify(state.user));
+      }
+    },
+    updateUser(state, { payload }) {
+      state.user = { ...state.user, ...payload };
+      localStorage.setItem('aishop_user', JSON.stringify(state.user));
+    },
+    clearError(state) {
+      state.error = null;
+    },
+  },
+});
+
+export const {
+  loginStart, loginSuccess, loginFailure,
+  logout, verifyEmail, updateUser, clearError,
+} = authSlice.actions;
+
+// Selectors
+export const selectAuth       = (s) => s.auth;
+export const selectUser       = (s) => s.auth.user;
+export const selectIsAuth     = (s) => s.auth.isAuthenticated;
+export const selectIsVerified = (s) => s.auth.isVerified;
+export const selectToken      = (s) => s.auth.token;
+
+export default authSlice.reducer;
