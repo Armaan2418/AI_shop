@@ -53,7 +53,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* Meet the Founders / Minds Behind It */}
+
       <section className="about-founders">
         <div className="container">
           <div className="founders-header">
@@ -71,7 +71,6 @@ export default function About() {
                   <img src="/developer-prachi.jpg" alt="Prachi Khandelwal" />
                 </div>
                 <div className="fc-content">
-                  <div className="fc-role">Co-Founder & UI/UX Director</div>
                   <h3 className="fc-name">Prachi Khandelwal</h3>
                   <div className="fc-quote">
                     "My vision was to make AI Shop feel less like a store and more like a luxury boutique. I focused entirely on the user's emotional journey—the colors, the layout spacing, and the micro-interactions. If a user isn't instantly captivated the moment the page loads, we haven't done our job. I wanted to build an aesthetic that breathes elegance and trust."
@@ -89,7 +88,6 @@ export default function About() {
                   <img src="/founder-armaan.jpeg" alt="Armaan Sangwan" />
                 </div>
                 <div className="fc-content">
-                  <div className="fc-role">Co-Founder & Lead Architect</div>
                   <h3 className="fc-name">Armaan Sangwan</h3>
                   <div className="fc-quote">
                     "While Prachi perfected the surface, my obsession was what happens underneath. I envisioned an architecture that doesn't just work, but anticipates scale. Implementing Redux state flows, real-time responsive routers, and ensuring blazing-fast data retrieval was strictly about providing a perfectly seamless backbone. The UI is beautiful because the engineering behind it is flawless."

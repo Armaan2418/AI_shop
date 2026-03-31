@@ -4,52 +4,163 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { selectIsAuth } from '../store/authSlice';
 import { productService } from '../services/productService';
+import { MOCK_PRODUCTS, getProductSpecs, getProductDescription, COMPARISON_MAP } from '../data/products';
 import './ProductDetail.css';
 
-// ── Mock Data ─────────────────────────────────────────────────────────
-const MOCK_PRODUCT = {
-  _id: '1',
-  name: 'iPhone 15 Pro Max',
-  brand: 'Apple',
-  category: 'phones',
-  price: 1199,
-  originalPrice: 1299,
-  rating: 4.8,
-  reviewCount: 2145,
-  inStock: true,
-  badge: 'AI Pick',
-  description: 'The iPhone 15 Pro Max represents the pinnacle of smartphone engineering. Forged from aerospace-grade titanium, it is the lightest Pro Max ever made. The A17 Pro chip delivers a transformative leap in performance, enabling console-quality gaming and groundbreaking AI capabilities. The new 48MP camera system with 5x optical zoom lets you capture stunning detail from incredible distances.',
-  colors: ['Natural Titanium', 'Blue Titanium', 'White Titanium', 'Black Titanium'],
-  storage: ['256GB', '512GB', '1TB'],
-  features: [
-    { label: 'Processor',    value: 'A17 Pro chip, 6-core CPU' },
-    { label: 'Camera',       value: '48MP main, 12MP ultrawide, 12MP telephoto' },
-    { label: 'Zoom',         value: '5x Optical Zoom, up to 25x Digital' },
-    { label: 'Display',      value: '6.7" Super Retina XDR, ProMotion 120Hz' },
-    { label: 'Battery',      value: 'Up to 29 hours video playback' },
-    { label: 'Connectivity', value: 'USB-C with USB 3 speeds, Wi-Fi 6E' },
-    { label: 'Build',        value: 'Titanium frame, textured matte glass back' },
-    { label: 'Action Button',value: 'Customizable hardware button' },
+// Generic reviews per category
+const GENERIC_REVIEWS = {
+  phones:      [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this device! The performance is top-notch and the camera quality blew me away. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium and the battery easily lasts a full day. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. The display is gorgeous and it handles gaming without any lag.' },
   ],
-  images: [
-    'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-bluetitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1693009278',
-    'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-naturaltitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1693009278',
-    'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-whitetitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1693009278',
-    'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-blacktitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1693009278',
+  laptops:     [
+    { id: 1, name: 'Arjun T.',  rating: 5, date: '5 days ago',  verified: true,  text: 'This laptop transformed my workflow. Blazing fast, runs cool and quiet. Best purchase I\'ve made this year.' },
+    { id: 2, name: 'Sanya K.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Very well built, keyboard is great and the trackpad is precise. Battery life is impressive.' },
+    { id: 3, name: 'Dev P.',    rating: 5, date: '1 month ago', verified: true,  text: 'Worth every rupee. Handles design work, video editing and gaming without breaking a sweat.' },
   ],
-  reviews: [
-    { id: 1, name: 'Arjun M.',  rating: 5, date: '2 weeks ago',  verified: true,  text: 'Best iPhone yet. The titanium build feels incredibly premium and the camera system is on another level. The 5x zoom is genuinely useful for everyday shots. Totally worth the upgrade.' },
-    { id: 2, name: 'Sneha R.',  rating: 5, date: '1 month ago',  verified: true,  text: 'Switched from Android after years and I am never going back. Performance is silky smooth, the display is gorgeous, and the battery lasts all day.' },
-    { id: 3, name: 'Kevin T.',  rating: 4, date: '3 weeks ago',  verified: true,  text: 'Great phone but the price is steep. Battery life is significantly better than my 14 Pro. The action button is a genuinely useful addition.' },
-    { id: 4, name: 'Priya K.',  rating: 5, date: '5 days ago',   verified: false, text: 'The camera upgrades alone make this worth it. Portrait mode is stunning. USB-C is a welcome change.' },
+  audio:       [
+    { id: 1, name: 'Neha G.',   rating: 5, date: '1 week ago',  verified: true,  text: 'The noise cancellation is outstanding. Wearing these makes the office disappear completely.' },
+    { id: 2, name: 'Karan B.',  rating: 5, date: '2 weeks ago', verified: true,  text: 'Rich, warm sound. Comfortable even after hours of use. Best audio I\'ve heard at this price.' },
+    { id: 3, name: 'Riya V.',   rating: 4, date: '1 month ago', verified: false, text: 'Great bass and clarity. The build feels very premium. App works well too.' },
+  ],
+  wearables:   [
+    { id: 1, name: 'Meera S.',  rating: 5, date: '3 days ago',  verified: true,  text: 'Tracks everything accurately and the health insights are genuinely useful. Love the always-on display.' },
+    { id: 2, name: 'Vijay N.',  rating: 4, date: '1 week ago',  verified: true,  text: 'Great smartwatch — battery life is solid and it pairs seamlessly with my phone.' },
+    { id: 3, name: 'Amit C.',   rating: 5, date: '3 weeks ago', verified: true,  text: 'Switched from a fitness band and couldn\'t be happier. The extra features are well worth it.' },
+  ],
+  gaming:      [
+    { id: 1, name: 'Yash M.',   rating: 5, date: '4 days ago',  verified: true,  text: 'Feels incredible in the hands. Response time is lightning-quick. My sessions have never been this immersive.' },
+    { id: 2, name: 'Aditya K.', rating: 5, date: '2 weeks ago', verified: true,  text: 'Build quality is premium and the wireless connection is rock-solid. Zero lag.' },
+    { id: 3, name: 'Siddharth', rating: 4, date: '1 month ago', verified: false, text: 'Really comfortable for long sessions. Would highly recommend to any serious gamer.' },
+  ],
+  accessories: [
+    { id: 1, name: 'Pooja L.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Exactly what I needed. Premium build, works perfectly and looks great on my desk.' },
+    { id: 2, name: 'Rohit D.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Does the job beautifully. Setup was straightforward and performance is reliable.' },
+    { id: 3, name: 'Kavya P.',  rating: 5, date: '1 month ago', verified: true,  text: 'Excellent quality. Noticed a real difference immediately. Highly recommended.' },
+  ],
+  clothing:    [
+    { id: 1, name: 'Ishaan T.', rating: 5, date: '2 days ago',  verified: true,  text: 'Fits perfectly! The fabric feels soft and the colour looks exactly like the photo. Great quality.' },
+    { id: 2, name: 'Diya M.',   rating: 4, date: '1 week ago',  verified: true,  text: 'Very comfortable and well-made. Gets lots of compliments. Will definitely buy again.' },
+    { id: 3, name: 'Rohan S.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Great value. Washed it twice and it held its shape and colour perfectly.' },
+  ],
+  fashion:     [
+    { id: 1, name: 'Aditi R.',  rating: 5, date: '3 days ago',  verified: true,  text: 'Absolutely stunning! The quality is superb and it elevates every outfit I pair it with.' },
+    { id: 2, name: 'Preet K.',  rating: 5, date: '1 week ago',  verified: true,  text: 'A genuine luxury feel. The craftsmanship is excellent and it arrived in perfect condition.' },
+    { id: 3, name: 'Tanya V.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Beautiful product. Looks even better in person. Packaging was elegant too.' },
+  ],
+  makeup:      [
+    { id: 1, name: 'Simran N.', rating: 5, date: '5 days ago',  verified: true,  text: 'Lasts all day! The formula is smooth and the pigment pay-off is incredible. My new holy grail.' },
+    { id: 2, name: 'Aanya P.',  rating: 5, date: '2 weeks ago', verified: true,  text: 'Amazing product. Goes on like a dream. My skin has never looked better.' },
+    { id: 3, name: 'Riya C.',   rating: 4, date: '1 month ago', verified: false, text: 'Great quality. The shade range is impressive and it feels comfortable to wear all day.' },
   ],
 };
 
-const RELATED = [
-  { _id: '3',  name: 'AirPods Pro 2nd Gen',  price: 249, originalPrice: 279, brand: 'Apple',   category: 'audio',     image: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQD83?wid=1144&hei=1144&fmt=jpeg&qlt=90&.v=1660803972361' },
-  { _id: '11', name: 'Apple Watch Ultra 2',   price: 799, originalPrice: null, brand: 'Apple',  category: 'wearables', image: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQDY3ref_VW_34FR+watch-49-titanium-ultra2_VW_34FR_WF_CO+watch-face-49-alpine-ultra2_VW_34FR_WF_CO?wid=750&hei=712&trim=1&fmt=p-jpg&qlt=95&.v=1693498667882' },
-  { _id: '6',  name: 'iPad Pro M4',           price: 999, originalPrice: null, brand: 'Apple',  category: 'phones',    image: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/ipad-pro-finish-select-gallery-202210-11inch?wid=5120&hei=2880&fmt=jpeg&qlt=90&.v=1664411207590' },
-];
+// Per-category variant data
+const CATEGORY_VARIANTS = {
+  phones:      { colors: ['Midnight Black', 'Glacier White', 'Ocean Blue', 'Forest Green'], storage: ['128 GB', '256 GB', '512 GB', '1 TB'] },
+  laptops:     { colors: ['Space Grey', 'Silver', 'Midnight'], storage: ['256 GB SSD', '512 GB SSD', '1 TB SSD'] },
+  audio:       { colors: ['Black', 'White', 'Midnight Blue'], storage: null },
+  wearables:   { colors: ['Midnight', 'Starlight', 'Graphite', 'Coral'], storage: null },
+  gaming:      { colors: ['Black', 'White', 'Red'], storage: null },
+  clothing:    { colors: ['White', 'Black', 'Navy Blue', 'Olive Green', 'Charcoal'], storage: null },
+  fashion:     { colors: ['Black', 'Brown', 'Tan', 'Burgundy'], storage: null },
+  makeup:      { colors: ['Shade 01', 'Shade 02', 'Shade 03', 'Shade 04'], storage: null },
+  accessories: { colors: ['Black', 'Silver', 'White'], storage: null },
+};
+
+// Per-color alternate images — visually different photos for each color variant
+const COLOR_IMAGE_POOL = {
+  phones: [
+    'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&q=80',
+    'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&q=80',
+    'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&q=80',
+    'https://images.unsplash.com/photo-1580910051074-3eb694886f8b?w=500&q=80',
+  ],
+  laptops: [
+    'https://images.unsplash.com/photo-1611186871525-b9e8b073b50a?w=500&q=80',
+    'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&q=80',
+    'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&q=80',
+  ],
+  audio: [
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
+    'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=500&q=80',
+    'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&q=80',
+  ],
+  wearables: [
+    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+    'https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=500&q=80',
+    'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500&q=80',
+    'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=500&q=80',
+  ],
+  gaming: [
+    'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500&q=80',
+    'https://images.unsplash.com/photo-1607853202273-232359dbb5b0?w=500&q=80',
+    'https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?w=500&q=80',
+  ],
+  clothing: [
+    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80',
+    'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80',
+    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&q=80',
+    'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&q=80',
+    'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500&q=80',
+  ],
+  fashion: [
+    'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80',
+    'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=500&q=80',
+    'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=500&q=80',
+    'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=500&q=80',
+  ],
+  makeup: [
+    'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&q=80',
+    'https://images.unsplash.com/photo-1631214499178-338dc7a3e0cb?w=500&q=80',
+    'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500&q=80',
+    'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=500&q=80',
+  ],
+  accessories: [
+    'https://images.unsplash.com/photo-1527443224154-c4a573d5f6b4?w=500&q=80',
+    'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
+    'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=500&q=80',
+  ],
+};
+
+function buildProductData(rawProduct) {
+  const cat      = rawProduct.category ?? 'accessories';
+  const variants = CATEGORY_VARIANTS[cat] ?? CATEGORY_VARIANTS.accessories;
+  const pool     = COLOR_IMAGE_POOL[cat] ?? COLOR_IMAGE_POOL.accessories;
+  // Build a map: colorIndex -> [4 images].
+  // First color uses the product's own image as hero; other colors use pool images.
+  const colorImages = {};
+  (variants.colors ?? []).forEach((color, i) => {
+    if (i === 0) {
+      // First color = product's real image + pool extras
+      colorImages[i] = [
+        rawProduct.image,
+        pool[0],
+        pool[1 % pool.length],
+        pool[2 % pool.length],
+      ];
+    } else {
+      // Other colors = pool image as hero + product image as fallback
+      colorImages[i] = [
+        pool[i % pool.length],
+        pool[(i + 1) % pool.length],
+        rawProduct.image,
+        pool[(i + 2) % pool.length],
+      ];
+    }
+  });
+  return {
+    ...rawProduct,
+    description: getProductDescription(rawProduct),
+    features:    getProductSpecs(rawProduct),
+    images:      colorImages[0] ?? [rawProduct.image, rawProduct.image, rawProduct.image, rawProduct.image],
+    colorImages,
+    reviews:     GENERIC_REVIEWS[cat] ?? GENERIC_REVIEWS.accessories,
+    colors:      variants.colors,
+    storage:     variants.storage,
+  };
+}
 
 // ── Icons ─────────────────────────────────────────────────────────────
 const Icon = ({ name, size = 18 }) => {
@@ -121,7 +232,9 @@ export default function ProductDetail() {
   const navigate  = useNavigate();
   const isAuth    = useSelector(selectIsAuth);
 
-  const [product,         setProduct]         = useState(MOCK_PRODUCT);
+  // Find product from shared data, fallback to first product
+  const rawDefault = MOCK_PRODUCTS.find(p => p._id === id) ?? MOCK_PRODUCTS[0];
+  const [product,         setProduct]         = useState(() => buildProductData(rawDefault));
   const [activeImg,       setActiveImg]       = useState(0);
   const [imgErrors,       setImgErrors]       = useState({});
   const [selectedColor,   setSelectedColor]   = useState(0);
@@ -133,12 +246,17 @@ export default function ProductDetail() {
   const [toast,           setToast]           = useState(null);
   const [reviewText,      setReviewText]      = useState('');
   const [reviewRating,    setReviewRating]    = useState(5);
-  const [hoverStar]                   = useState(0); // Restored for star hover functionality
+  const [hoverStar]                   = useState(0);
   const [zoom,            setZoom]            = useState(false);
 
   const reviewsRef = useRef(null);
 
   useEffect(() => {
+    // Update product when route id changes
+    const rawProduct = MOCK_PRODUCTS.find(p => p._id === id);
+    if (rawProduct) {
+      setProduct(buildProductData(rawProduct));
+    }
     const load = async () => {
       try {
         const data = await productService.getById(id);
@@ -147,7 +265,17 @@ export default function ProductDetail() {
     };
     load();
     window.scrollTo(0, 0);
+    setActiveImg(0);
+    setImgErrors({});
+    setSelectedColor(0);
+    setSelectedStorage(0);
+    setQty(1);
   }, [id]);
+
+  // Related = other products in same category (up to 3, excluding current)
+  const RELATED = MOCK_PRODUCTS
+    .filter(p => p.category === product.category && p._id !== id)
+    .slice(0, 3);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -358,14 +486,22 @@ export default function ProductDetail() {
             {product.colors?.length > 0 && (
               <div className="pdp__option-group">
                 <div className="pdp__option-label">
-                  Color <span className="pdp__option-value">{product.colors[selectedColor]}</span>
+                  {product.category === 'makeup' ? 'Shade' :
+                   (product.category === 'clothing' || product.category === 'fashion') ? 'Colour' : 'Colour'}{' '}
+                  <span className="pdp__option-value">{product.colors[selectedColor]}</span>
                 </div>
                 <div className="pdp__color-options">
                   {product.colors.map((color, i) => (
                     <button
                       key={color}
                       className={`pdp__color-btn ${selectedColor === i ? 'pdp__color-btn--active' : ''}`}
-                      onClick={() => setSelectedColor(i)}
+                      onClick={() => {
+                        setSelectedColor(i);
+                        setActiveImg(0);
+                        if (product.colorImages?.[i]) {
+                          setProduct(prev => ({ ...prev, images: prev.colorImages[i] }));
+                        }
+                      }}
                       title={color}
                     >
                       {color.split(' ')[0]}
@@ -379,7 +515,9 @@ export default function ProductDetail() {
             {product.storage?.length > 0 && (
               <div className="pdp__option-group">
                 <div className="pdp__option-label">
-                  Storage <span className="pdp__option-value">{product.storage[selectedStorage]}</span>
+                  {product.category === 'clothing' ? 'Size' :
+                   product.category === 'laptops' || product.category === 'phones' ? 'Storage' : 'Variant'}{' '}
+                  <span className="pdp__option-value">{product.storage[selectedStorage]}</span>
                 </div>
                 <div className="pdp__storage-options">
                   {product.storage.map((s, i) => (
@@ -584,6 +722,84 @@ export default function ProductDetail() {
             </div>
           )}
         </div>
+
+        {/* ── Compare Similar Products ── */}
+        {(() => {
+          const compIds = COMPARISON_MAP[id];
+          if (!compIds) return null;
+          const compProducts = compIds
+            .map(cid => MOCK_PRODUCTS.find(p => p._id === cid))
+            .filter(Boolean);
+          if (compProducts.length < 2) return null;
+          const currentIdx = compProducts.findIndex(p => p._id === id);
+          return (
+            <div className="pdp__compare">
+              <h3 className="pdp__compare-title">
+                <Icon name="package" size={20} /> Compare Similar Products
+              </h3>
+              <div className="pdp__compare-table-wrap">
+                <table className="pdp__compare-table">
+                  <thead>
+                    <tr>
+                      <th className="pdp__compare-label-col"></th>
+                      {compProducts.map((cp, i) => (
+                        <th key={cp._id} className={`pdp__compare-product-col ${i === currentIdx ? 'pdp__compare-product-col--current' : ''}`}>
+                          {i === currentIdx && <span className="pdp__compare-current-badge">Current</span>}
+                          <div className="pdp__compare-img-wrap">
+                            <img src={cp.image} alt={cp.name} className="pdp__compare-img" onError={e => { e.target.style.display = 'none'; }} />
+                          </div>
+                          <Link to={`/products/${cp._id}`} className="pdp__compare-name">{cp.name}</Link>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="pdp__compare-label">Brand</td>
+                      {compProducts.map(cp => <td key={cp._id}>{cp.brand}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="pdp__compare-label">Price</td>
+                      {compProducts.map(cp => <td key={cp._id} className="pdp__compare-price">₹{cp.price.toLocaleString('en-IN')}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="pdp__compare-label">Rating</td>
+                      {compProducts.map(cp => (
+                        <td key={cp._id}>
+                          <span className="pdp__compare-rating">
+                            <Stars rating={cp.rating} size={12} /> {cp.rating}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="pdp__compare-label">Reviews</td>
+                      {compProducts.map(cp => <td key={cp._id}>{cp.reviewCount?.toLocaleString()}</td>)}
+                    </tr>
+                    <tr>
+                      <td className="pdp__compare-label">In Stock</td>
+                      {compProducts.map(cp => (
+                        <td key={cp._id}>
+                          <span className={cp.inStock ? 'pdp__compare-yes' : 'pdp__compare-no'}>
+                            {cp.inStock ? '✓ Yes' : '✗ No'}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                    {compProducts[0]?.originalPrice != null && (
+                      <tr>
+                        <td className="pdp__compare-label">Original Price</td>
+                        {compProducts.map(cp => (
+                          <td key={cp._id}>{cp.originalPrice ? `₹${cp.originalPrice.toLocaleString('en-IN')}` : '—'}</td>
+                        ))}
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Related Products ── */}
         <div className="pdp__related">
