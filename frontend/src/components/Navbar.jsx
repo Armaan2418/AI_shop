@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuth, selectUser, logout } from '../store/authSlice';
 import { selectCartCount } from '../store/cartSlice';
+import { selectWishlistCount } from '../store/wishlistSlice';
 import { ROUTES } from '../routes/AppRoutes';
 import './Navbar.css';
 
@@ -61,9 +62,10 @@ export default function Navbar() {
   const dispatch  = useDispatch();
   const navigate  = useNavigate();
   const location  = useLocation();
-  const isAuth    = useSelector(selectIsAuth);
-  const user      = useSelector(selectUser);
-  const cartCount = useSelector(selectCartCount);
+  const isAuth       = useSelector(selectIsAuth);
+  const user         = useSelector(selectUser);
+  const cartCount    = useSelector(selectCartCount);
+  const wishlistCount = useSelector(selectWishlistCount);
 
   const [scrolled,     setScrolled]     = useState(false);
   const [mobileOpen,   setMobileOpen]   = useState(false);
@@ -195,6 +197,19 @@ export default function Navbar() {
           </ul>
 
           <div className="navbar__right">
+            {/* AI Visual Search camera button */}
+            <button
+              className="navbar__icon-btn navbar__icon-btn--camera"
+              aria-label="AI Visual Search"
+              title="Search by Image"
+              onClick={() => window.dispatchEvent(new Event('aishop:open-visual-search'))}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </button>
+
             <div className="navbar__search-wrap">
               {searchOpen ? (
                 <form className="navbar__search-form" onSubmit={handleSearch}>
@@ -229,7 +244,7 @@ export default function Navbar() {
                       <div className="navbar__user-body">
                         <Link to="/dashboard"          className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="dashboard" /><span>Dashboard</span></Link>
                         <Link to="/dashboard"          className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="orders"    /><span>My Orders</span></Link>
-                        <Link to="/dashboard/wishlist" className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="heart"     /><span>Wishlist</span></Link>
+                        <Link to="/wishlist" className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="heart" /><span>Wishlist {wishlistCount > 0 && <span className="navbar__user-badge">{wishlistCount}</span>}</span></Link>
                         <Link to="/dashboard/settings" className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="settings"  /><span>Settings</span></Link>
                       </div>
                       <div className="navbar__user-divider" />
@@ -252,6 +267,16 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+
+            {/* Wishlist icon with count */}
+            <Link to="/wishlist" className="navbar__cart-btn navbar__wishlist-btn" aria-label="Wishlist" title="My Wishlist">
+              <Icon name="heart" size={20} />
+              {wishlistCount > 0 && (
+                <span className="navbar__cart-badge navbar__wishlist-badge">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
+            </Link>
 
             <Link to="/cart" className={`navbar__cart-btn ${cartBounce ? 'navbar__cart-btn--bounce' : ''}`} aria-label="Cart">
               <Icon name="cart" size={20} />
@@ -295,6 +320,10 @@ export default function Navbar() {
               <Icon name={cat.icon} size={15} /><span>{cat.label}</span>
             </Link>
           ))}
+          <Link to="/wishlist" className="mobile-drawer__link" onClick={() => setMobileOpen(false)}>
+            <Icon name="heart" /><span>Wishlist</span>
+            {wishlistCount > 0 && <span className="mobile-drawer__badge">{wishlistCount}</span>}
+          </Link>
           <Link to="/cart" className="mobile-drawer__link" onClick={() => setMobileOpen(false)}>
             <Icon name="cart" /><span>Cart</span>
             {cartCount > 0 && <span className="mobile-drawer__badge">{cartCount}</span>}

@@ -1,58 +1,123 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { selectIsAuth } from '../store/authSlice';
+import { toggleWishlist, selectIsWishlisted } from '../store/wishlistSlice';
+import { toggleCompare, selectIsCompared, selectCompareCount } from '../store/compareSlice';
 import { productService } from '../services/productService';
 import { MOCK_PRODUCTS, getProductSpecs, getProductDescription, COMPARISON_MAP } from '../data/products';
 import './ProductDetail.css';
 
 // Generic reviews per category
 const GENERIC_REVIEWS = {
-  phones:      [
-    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this device! The performance is top-notch and the camera quality blew me away. Great value for the price.' },
-    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium and the battery easily lasts a full day. Delivery was fast too.' },
-    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. The display is gorgeous and it handles gaming without any lag.' },
+  phones: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  laptops:     [
-    { id: 1, name: 'Arjun T.',  rating: 5, date: '5 days ago',  verified: true,  text: 'This laptop transformed my workflow. Blazing fast, runs cool and quiet. Best purchase I\'ve made this year.' },
-    { id: 2, name: 'Sanya K.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Very well built, keyboard is great and the trackpad is precise. Battery life is impressive.' },
-    { id: 3, name: 'Dev P.',    rating: 5, date: '1 month ago', verified: true,  text: 'Worth every rupee. Handles design work, video editing and gaming without breaking a sweat.' },
+  laptops: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  audio:       [
-    { id: 1, name: 'Neha G.',   rating: 5, date: '1 week ago',  verified: true,  text: 'The noise cancellation is outstanding. Wearing these makes the office disappear completely.' },
-    { id: 2, name: 'Karan B.',  rating: 5, date: '2 weeks ago', verified: true,  text: 'Rich, warm sound. Comfortable even after hours of use. Best audio I\'ve heard at this price.' },
-    { id: 3, name: 'Riya V.',   rating: 4, date: '1 month ago', verified: false, text: 'Great bass and clarity. The build feels very premium. App works well too.' },
+  audio: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  wearables:   [
-    { id: 1, name: 'Meera S.',  rating: 5, date: '3 days ago',  verified: true,  text: 'Tracks everything accurately and the health insights are genuinely useful. Love the always-on display.' },
-    { id: 2, name: 'Vijay N.',  rating: 4, date: '1 week ago',  verified: true,  text: 'Great smartwatch — battery life is solid and it pairs seamlessly with my phone.' },
-    { id: 3, name: 'Amit C.',   rating: 5, date: '3 weeks ago', verified: true,  text: 'Switched from a fitness band and couldn\'t be happier. The extra features are well worth it.' },
+  wearables: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  gaming:      [
-    { id: 1, name: 'Yash M.',   rating: 5, date: '4 days ago',  verified: true,  text: 'Feels incredible in the hands. Response time is lightning-quick. My sessions have never been this immersive.' },
-    { id: 2, name: 'Aditya K.', rating: 5, date: '2 weeks ago', verified: true,  text: 'Build quality is premium and the wireless connection is rock-solid. Zero lag.' },
-    { id: 3, name: 'Siddharth', rating: 4, date: '1 month ago', verified: false, text: 'Really comfortable for long sessions. Would highly recommend to any serious gamer.' },
+  gaming: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
   accessories: [
-    { id: 1, name: 'Pooja L.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Exactly what I needed. Premium build, works perfectly and looks great on my desk.' },
-    { id: 2, name: 'Rohit D.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Does the job beautifully. Setup was straightforward and performance is reliable.' },
-    { id: 3, name: 'Kavya P.',  rating: 5, date: '1 month ago', verified: true,  text: 'Excellent quality. Noticed a real difference immediately. Highly recommended.' },
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  clothing:    [
-    { id: 1, name: 'Ishaan T.', rating: 5, date: '2 days ago',  verified: true,  text: 'Fits perfectly! The fabric feels soft and the colour looks exactly like the photo. Great quality.' },
-    { id: 2, name: 'Diya M.',   rating: 4, date: '1 week ago',  verified: true,  text: 'Very comfortable and well-made. Gets lots of compliments. Will definitely buy again.' },
-    { id: 3, name: 'Rohan S.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Great value. Washed it twice and it held its shape and colour perfectly.' },
+  clothing: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  fashion:     [
-    { id: 1, name: 'Aditi R.',  rating: 5, date: '3 days ago',  verified: true,  text: 'Absolutely stunning! The quality is superb and it elevates every outfit I pair it with.' },
-    { id: 2, name: 'Preet K.',  rating: 5, date: '1 week ago',  verified: true,  text: 'A genuine luxury feel. The craftsmanship is excellent and it arrived in perfect condition.' },
-    { id: 3, name: 'Tanya V.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Beautiful product. Looks even better in person. Packaging was elegant too.' },
+  fashion: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
-  makeup:      [
-    { id: 1, name: 'Simran N.', rating: 5, date: '5 days ago',  verified: true,  text: 'Lasts all day! The formula is smooth and the pigment pay-off is incredible. My new holy grail.' },
-    { id: 2, name: 'Aanya P.',  rating: 5, date: '2 weeks ago', verified: true,  text: 'Amazing product. Goes on like a dream. My skin has never looked better.' },
-    { id: 3, name: 'Riya C.',   rating: 4, date: '1 month ago', verified: false, text: 'Great quality. The shade range is impressive and it feels comfortable to wear all day.' },
+  makeup: [
+    { id: 1, name: 'Rahul S.',  rating: 5, date: '1 week ago',  verified: true,  text: 'Absolutely love this! The performance is top-notch. Great value for the price.' },
+    { id: 2, name: 'Priya M.',  rating: 4, date: '2 weeks ago', verified: true,  text: 'Really solid buy. Build quality is premium. Delivery was fast too.' },
+    { id: 3, name: 'Ankit R.',  rating: 5, date: '3 weeks ago', verified: false, text: 'Exceeded my expectations. Simply gorgeous.' },
+    { id: 4, name: 'Vikram B.', rating: 5, date: '1 month ago', verified: true, text: 'Fantastic quality and delivered earlier than expected.' },
+    { id: 5, name: 'Sonal J.', rating: 4, date: '2 months ago', verified: true, text: 'Very satisfied. Packaging was secure.' },
+    { id: 6, name: 'Ritesh P.', rating: 5, date: '2 months ago', verified: false, text: 'Exceeded expectations. A top-tier product.' },
+    { id: 7, name: 'Alia A.', rating: 4, date: '3 months ago', verified: true, text: 'Solid purchase although slightly expensive.' },
+    { id: 8, name: 'Naman K.', rating: 5, date: '3 months ago', verified: true, text: 'Highly recommend this to everyone!' },
+    { id: 9, name: 'Sneha R.', rating: 5, date: '4 months ago', verified: false, text: 'Works flawlessly, extremely happy with it.' },
+    { id: 10, name: 'Manish D.', rating: 4, date: '6 months ago', verified: true, text: 'Been using it for a while now, absolutely durable.' },
   ],
 };
 
@@ -75,10 +140,10 @@ const COLOR_IMAGE_POOL = {
     'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&q=80',
     'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&q=80',
     'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&q=80',
-    'https://images.unsplash.com/photo-1580910051074-3eb694886f8b?w=500&q=80',
+    'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=500&q=80',
   ],
   laptops: [
-    'https://images.unsplash.com/photo-1611186871525-b9e8b073b50a?w=500&q=80',
+    'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=500&q=80',
     'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&q=80',
     'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&q=80',
   ],
@@ -88,14 +153,14 @@ const COLOR_IMAGE_POOL = {
     'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&q=80',
   ],
   wearables: [
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+    'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&q=80',
     'https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=500&q=80',
     'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500&q=80',
     'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=500&q=80',
   ],
   gaming: [
     'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500&q=80',
-    'https://images.unsplash.com/photo-1607853202273-232359dbb5b0?w=500&q=80',
+    'https://images.unsplash.com/photo-1622297845775-5ff3fef71d13?w=500&q=80',
     'https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?w=500&q=80',
   ],
   clothing: [
@@ -103,7 +168,7 @@ const COLOR_IMAGE_POOL = {
     'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&q=80',
     'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&q=80',
     'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&q=80',
-    'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=500&q=80',
+    'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&q=80',
   ],
   fashion: [
     'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80',
@@ -113,12 +178,12 @@ const COLOR_IMAGE_POOL = {
   ],
   makeup: [
     'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&q=80',
-    'https://images.unsplash.com/photo-1631214499178-338dc7a3e0cb?w=500&q=80',
+    'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=500&q=80',
     'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500&q=80',
     'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=500&q=80',
   ],
   accessories: [
-    'https://images.unsplash.com/photo-1527443224154-c4a573d5f6b4?w=500&q=80',
+    'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=500&q=80',
     'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
     'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=500&q=80',
   ],
@@ -132,23 +197,10 @@ function buildProductData(rawProduct) {
   // First color uses the product's own image as hero; other colors use pool images.
   const colorImages = {};
   (variants.colors ?? []).forEach((color, i) => {
-    if (i === 0) {
-      // First color = product's real image + pool extras
-      colorImages[i] = [
-        rawProduct.image,
-        pool[0],
-        pool[1 % pool.length],
-        pool[2 % pool.length],
-      ];
-    } else {
-      // Other colors = pool image as hero + product image as fallback
-      colorImages[i] = [
-        pool[i % pool.length],
-        pool[(i + 1) % pool.length],
-        rawProduct.image,
-        pool[(i + 2) % pool.length],
-      ];
-    }
+    // We duplicate the main accurate product image 4 times to avoid 
+    // showing cross-brand Unsplash images (like an Xbox for a PS5) on variant slides 
+    // since we do not have specific 4-angle URLs for all 90 products.
+    colorImages[i] = [rawProduct.image, rawProduct.image, rawProduct.image, rawProduct.image];
   });
   return {
     ...rawProduct,
@@ -231,6 +283,9 @@ export default function ProductDetail() {
   const dispatch  = useDispatch();
   const navigate  = useNavigate();
   const isAuth    = useSelector(selectIsAuth);
+  const wished    = useSelector(selectIsWishlisted(id));
+  const compared  = useSelector(selectIsCompared(id));
+  const compareCount = useSelector(selectCompareCount);
 
   // Find product from shared data, fallback to first product
   const rawDefault = MOCK_PRODUCTS.find(p => p._id === id) ?? MOCK_PRODUCTS[0];
@@ -241,13 +296,21 @@ export default function ProductDetail() {
   const [selectedStorage, setSelectedStorage] = useState(0);
   const [qty,             setQty]             = useState(1);
   const [activeTab,       setActiveTab]       = useState('description');
-  const [wished,          setWished]          = useState(false);
   const [added,           setAdded]           = useState(false);
   const [toast,           setToast]           = useState(null);
   const [reviewText,      setReviewText]      = useState('');
   const [reviewRating,    setReviewRating]    = useState(5);
   const [hoverStar]                   = useState(0);
   const [zoom,            setZoom]            = useState(false);
+  const [showCompare,     setShowCompare]     = useState(false);
+
+  // 360° spin state
+  const [is360Mode,    setIs360Mode]    = useState(false);
+  const [isDragging,   setIsDragging]   = useState(false);
+  const [dragStartX,   setDragStartX]   = useState(null);
+  const [spin360Angle, setSpin360Angle] = useState(0);
+  const [heartBurst,   setHeartBurst]   = useState(false);
+  const imgColRef = useRef(null);
 
   const reviewsRef = useRef(null);
 
@@ -365,21 +428,78 @@ export default function ProductDetail() {
         <div className="pdp__grid">
 
           {/* ── Image Column ── */}
-          <div className="pdp__image-col">
-            {/* Main image */}
-            <div className={`pdp__main-img ${zoom ? 'pdp__main-img--zoom' : ''}`} onClick={() => setZoom(z => !z)}>
-              {!imgErrors[activeImg] && product.images?.[activeImg] ? (
-                <img
-                  src={product.images[activeImg]}
-                  alt={product.name}
-                  className="pdp__img"
-                  onError={() => setImgErrors(e => ({ ...e, [activeImg]: true }))}
-                />
-              ) : (
-                <div className="pdp__img-fallback">
-                  <Icon name={categoryIcon} size={80} />
-                </div>
+          <div className="pdp__image-col" ref={imgColRef}>
+            {/* 360° mode toggle */}
+            <div className={`pdp__360-bar ${is360Mode ? 'pdp__360-bar--active' : ''}`}>
+              <button
+                className={`pdp__360-toggle ${is360Mode ? 'pdp__360-toggle--active' : ''}`}
+                onClick={() => {
+                  setIs360Mode(m => !m);
+                  setSpin360Angle(0);
+                  setZoom(false);
+                }}
+              >
+                <span className="pdp__360-icon">⟳</span>
+                {is360Mode ? 'Exit 360°' : '360° View'}
+              </button>
+              {is360Mode && (
+                <span className="pdp__360-hint">← Drag image to rotate →</span>
               )}
+            </div>
+
+            {/* Main image */}
+            <div
+              className={`pdp__main-img ${zoom && !is360Mode ? 'pdp__main-img--zoom' : ''} ${is360Mode ? 'pdp__main-img--360' : ''}`}
+              onClick={() => { if (!is360Mode) setZoom(z => !z); }}
+              onMouseDown={e => {
+                if (!is360Mode) return;
+                setIsDragging(true);
+                setDragStartX(e.clientX);
+              }}
+              onMouseMove={e => {
+                if (!is360Mode || !isDragging || dragStartX === null) return;
+                const delta = e.clientX - dragStartX;
+                setSpin360Angle(prev => prev - delta * 0.6);
+                setDragStartX(e.clientX);
+              }}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
+              onTouchStart={e => {
+                if (!is360Mode) return;
+                setIsDragging(true);
+                setDragStartX(e.touches[0].clientX);
+              }}
+              onTouchMove={e => {
+                if (!is360Mode || !isDragging || dragStartX === null) return;
+                const delta = e.touches[0].clientX - dragStartX;
+                setSpin360Angle(prev => prev - delta * 0.6);
+                setDragStartX(e.touches[0].clientX);
+              }}
+              onTouchEnd={() => setIsDragging(false)}
+              style={{ cursor: is360Mode ? (isDragging ? 'grabbing' : 'grab') : undefined }}
+            >
+              {/* Display: 360 mode applies rotateY transform on image */}
+              {(() => {
+                const displayIdx = activeImg;
+                return !imgErrors[displayIdx] && product.images?.[displayIdx] ? (
+                  <img
+                    src={product.images[displayIdx]}
+                    alt={product.name}
+                    className={`pdp__img`}
+                    style={is360Mode ? {
+                      transform: `perspective(600px) rotateY(${spin360Angle}deg)`,
+                      transition: isDragging ? 'none' : 'transform 0.3s ease',
+                      willChange: 'transform'
+                    } : {}}
+                    onError={() => setImgErrors(e => ({ ...e, [displayIdx]: true }))}
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="pdp__img-fallback">
+                    <Icon name={categoryIcon} size={80} />
+                  </div>
+                );
+              })()}
 
               {discount && (
                 <span className="pdp__img-badge pdp__img-badge--sale">-{discount}%</span>
@@ -389,42 +509,67 @@ export default function ProductDetail() {
                   <Icon name="brain" size={11} /> AI Pick
                 </span>
               )}
-              <div className="pdp__img-zoom-hint">
-                {zoom ? 'Click to zoom out' : 'Click to zoom in'}
-              </div>
+              {is360Mode && (
+                <span className="pdp__360-indicator">
+                  ⟳ 360°
+                </span>
+              )}
+              {!is360Mode && (
+                <div className="pdp__img-zoom-hint">
+                  {zoom ? 'Click to zoom out' : 'Click to zoom in'}
+                </div>
+              )}
             </div>
 
-            {/* Thumbnails */}
-            <div className="pdp__thumbs">
-              {(product.images ?? [null, null, null, null]).map((img, i) => (
-                <button
-                  key={i}
-                  className={`pdp__thumb ${activeImg === i ? 'pdp__thumb--active' : ''}`}
-                  onClick={() => setActiveImg(i)}
-                >
-                  {img && !imgErrors[i] ? (
-                    <img
-                      src={img}
-                      alt={`View ${i + 1}`}
-                      onError={() => setImgErrors(e => ({ ...e, [i]: true }))}
-                    />
-                  ) : (
-                    <span className="pdp__thumb-fallback">
-                      <Icon name={categoryIcon} size={20} />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+            {/* Thumbnails — hidden in 360 mode */}
+            {!is360Mode && (
+              <div className="pdp__thumbs">
+                {(product.images ?? [null, null, null, null]).map((img, i) => (
+                  <button
+                    key={i}
+                    className={`pdp__thumb ${activeImg === i ? 'pdp__thumb--active' : ''}`}
+                    onClick={() => setActiveImg(i)}
+                  >
+                    {img && !imgErrors[i] ? (
+                      <img
+                        src={img}
+                        alt={`View ${i + 1}`}
+                        onError={() => setImgErrors(e => ({ ...e, [i]: true }))}
+                      />
+                    ) : (
+                      <span className="pdp__thumb-fallback">
+                        <Icon name={categoryIcon} size={20} />
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Action buttons under image */}
             <div className="pdp__img-actions">
               <button
                 className={`pdp__action-btn ${wished ? 'pdp__action-btn--wished' : ''}`}
-                onClick={() => setWished(w => !w)}
+                onClick={() => {
+                  dispatch(toggleWishlist(product));
+                  if (!wished) { setHeartBurst(true); setTimeout(() => setHeartBurst(false), 600); }
+                }}
+                style={{ position: 'relative' }}
               >
                 <Icon name={wished ? 'heartFill' : 'heart'} size={16} />
                 {wished ? 'Saved' : 'Save'}
+                {heartBurst && [
+                  ...Array(5)
+                ].map((_, i) => (
+                  <span key={i} className={`heart-particle heart-particle--${i}`} style={{ position: 'absolute', top: '50%', left: '50%', pointerEvents: 'none' }}>♥</span>
+                ))}
+              </button>
+              <button
+                className={`pdp__action-btn ${compared ? 'pdp__action-btn--compared' : ''}`}
+                onClick={() => { if (!compared && compareCount >= 3) return; dispatch(toggleCompare(product)); }}
+                title={compared ? 'Remove from Compare' : compareCount >= 3 ? 'Max 3 items' : 'Add to Compare'}
+              >
+                ⚖ {compared ? 'Comparing' : 'Compare'}
               </button>
               <button className="pdp__action-btn" onClick={() => navigator.share?.({ title: product.name, url: window.location.href })}>
                 <Icon name="share" size={16} />
@@ -734,69 +879,80 @@ export default function ProductDetail() {
           const currentIdx = compProducts.findIndex(p => p._id === id);
           return (
             <div className="pdp__compare">
-              <h3 className="pdp__compare-title">
-                <Icon name="package" size={20} /> Compare Similar Products
-              </h3>
-              <div className="pdp__compare-table-wrap">
-                <table className="pdp__compare-table">
-                  <thead>
-                    <tr>
-                      <th className="pdp__compare-label-col"></th>
-                      {compProducts.map((cp, i) => (
-                        <th key={cp._id} className={`pdp__compare-product-col ${i === currentIdx ? 'pdp__compare-product-col--current' : ''}`}>
-                          {i === currentIdx && <span className="pdp__compare-current-badge">Current</span>}
-                          <div className="pdp__compare-img-wrap">
-                            <img src={cp.image} alt={cp.name} className="pdp__compare-img" onError={e => { e.target.style.display = 'none'; }} />
-                          </div>
-                          <Link to={`/products/${cp._id}`} className="pdp__compare-name">{cp.name}</Link>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="pdp__compare-label">Brand</td>
-                      {compProducts.map(cp => <td key={cp._id}>{cp.brand}</td>)}
-                    </tr>
-                    <tr>
-                      <td className="pdp__compare-label">Price</td>
-                      {compProducts.map(cp => <td key={cp._id} className="pdp__compare-price">₹{cp.price.toLocaleString('en-IN')}</td>)}
-                    </tr>
-                    <tr>
-                      <td className="pdp__compare-label">Rating</td>
-                      {compProducts.map(cp => (
-                        <td key={cp._id}>
-                          <span className="pdp__compare-rating">
-                            <Stars rating={cp.rating} size={12} /> {cp.rating}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td className="pdp__compare-label">Reviews</td>
-                      {compProducts.map(cp => <td key={cp._id}>{cp.reviewCount?.toLocaleString()}</td>)}
-                    </tr>
-                    <tr>
-                      <td className="pdp__compare-label">In Stock</td>
-                      {compProducts.map(cp => (
-                        <td key={cp._id}>
-                          <span className={cp.inStock ? 'pdp__compare-yes' : 'pdp__compare-no'}>
-                            {cp.inStock ? '✓ Yes' : '✗ No'}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                    {compProducts[0]?.originalPrice != null && (
+              <button
+                className={`pdp__compare-toggle ${showCompare ? 'pdp__compare-toggle--open' : ''}`}
+                onClick={() => setShowCompare(prev => !prev)}
+              >
+                <span className="pdp__compare-toggle-left">
+                  <Icon name="package" size={18} />
+                  Compare with Similar Products
+                </span>
+                <span className={`pdp__compare-chevron ${showCompare ? 'pdp__compare-chevron--open' : ''}`}>
+                  <Icon name="chevronRight" size={16} />
+                </span>
+              </button>
+              {showCompare && (
+                <div className="pdp__compare-table-wrap pdp__compare-table-wrap--animate">
+                  <table className="pdp__compare-table">
+                    <thead>
                       <tr>
-                        <td className="pdp__compare-label">Original Price</td>
-                        {compProducts.map(cp => (
-                          <td key={cp._id}>{cp.originalPrice ? `₹${cp.originalPrice.toLocaleString('en-IN')}` : '—'}</td>
+                        <th className="pdp__compare-label-col"></th>
+                        {compProducts.map((cp, i) => (
+                          <th key={cp._id} className={`pdp__compare-product-col ${i === currentIdx ? 'pdp__compare-product-col--current' : ''}`}>
+                            {i === currentIdx && <span className="pdp__compare-current-badge">Current</span>}
+                            <div className="pdp__compare-img-wrap">
+                              <img src={cp.image} alt={cp.name} className="pdp__compare-img" onError={e => { e.target.style.display = 'none'; }} />
+                            </div>
+                            <Link to={`/products/${cp._id}`} className="pdp__compare-name">{cp.name}</Link>
+                          </th>
                         ))}
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="pdp__compare-label">Brand</td>
+                        {compProducts.map(cp => <td key={cp._id}>{cp.brand}</td>)}
+                      </tr>
+                      <tr>
+                        <td className="pdp__compare-label">Price</td>
+                        {compProducts.map(cp => <td key={cp._id} className="pdp__compare-price">₹{cp.price.toLocaleString('en-IN')}</td>)}
+                      </tr>
+                      <tr>
+                        <td className="pdp__compare-label">Rating</td>
+                        {compProducts.map(cp => (
+                          <td key={cp._id}>
+                            <span className="pdp__compare-rating">
+                              <Stars rating={cp.rating} size={12} /> {cp.rating}
+                            </span>
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="pdp__compare-label">Reviews</td>
+                        {compProducts.map(cp => <td key={cp._id}>{cp.reviewCount?.toLocaleString()}</td>)}
+                      </tr>
+                      <tr>
+                        <td className="pdp__compare-label">In Stock</td>
+                        {compProducts.map(cp => (
+                          <td key={cp._id}>
+                            <span className={cp.inStock ? 'pdp__compare-yes' : 'pdp__compare-no'}>
+                              {cp.inStock ? '✓ Yes' : '✗ No'}
+                            </span>
+                          </td>
+                        ))}
+                      </tr>
+                      {compProducts[0]?.originalPrice != null && (
+                        <tr>
+                          <td className="pdp__compare-label">Original Price</td>
+                          {compProducts.map(cp => (
+                            <td key={cp._id}>{cp.originalPrice ? `₹${cp.originalPrice.toLocaleString('en-IN')}` : '—'}</td>
+                          ))}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           );
         })()}

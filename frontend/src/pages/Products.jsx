@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
+import { toggleWishlist, selectIsWishlisted } from '../store/wishlistSlice';
+import { toggleCompare, selectIsCompared, selectCompareCount } from '../store/compareSlice';
 import { productService } from '../services/productService';
 import { MOCK_PRODUCTS } from '../data/products';
 import './Products.css';
@@ -88,8 +90,12 @@ function Stars({ rating }) {
 
 // ── Product Card ──────────────────────────────────────────────────────
 function ProductCard({ product, viewMode, onAddToCart, isAdded }) {
-  const [wished,   setWished]   = useState(false);
+  const dispatch     = useDispatch();
+  const wished       = useSelector(selectIsWishlisted(product._id));
+  const compared     = useSelector(selectIsCompared(product._id));
+  const compareCount = useSelector(selectCompareCount);
   const [imgError, setImgError] = useState(false);
+  const [heartBurst, setHeartBurst] = useState(false);
 
   const discount = product.originalPrice
     ? Math.round((1 - product.price / product.originalPrice) * 100)
@@ -97,13 +103,20 @@ function ProductCard({ product, viewMode, onAddToCart, isAdded }) {
 
   const handleWish = (e) => {
     e.preventDefault();
-    setWished(w => !w);
+    dispatch(toggleWishlist(product));
+    if (!wished) { setHeartBurst(true); setTimeout(() => setHeartBurst(false), 600); }
   };
 
   const handleAdd = (e) => {
     e.preventDefault();
     if (!product.inStock) return;
     onAddToCart(product);
+  };
+
+  const handleCompare = (e) => {
+    e.preventDefault();
+    if (!compared && compareCount >= 3) return;
+    dispatch(toggleCompare(product));
   };
 
   const categoryIconMap = {
@@ -127,10 +140,6 @@ function ProductCard({ product, viewMode, onAddToCart, isAdded }) {
             onError={() => setImgError(true)}
           />
         )}
-
-        <button className={`pcard__wish ${wished ? 'pcard__wish--active' : ''}`} onClick={handleWish} aria-label="Wishlist">
-          <Icon name={wished ? 'heartFill' : 'heart'} size={14} />
-        </button>
 
         <div className="pcard__badges">
           {discount && <span className="pcard__badge pcard__badge--sale">-{discount}%</span>}
@@ -175,17 +184,45 @@ function ProductCard({ product, viewMode, onAddToCart, isAdded }) {
           </div>
         )}
 
-        <button
-          className={`pcard__add-btn ${isAdded ? 'pcard__add-btn--added' : ''} ${!product.inStock ? 'pcard__add-btn--disabled' : ''}`}
-          onClick={handleAdd}
-          disabled={!product.inStock}
-        >
-          {isAdded
-            ? <><Icon name="check" size={14} /> Added to Cart</>
-            : !product.inStock
-            ? 'Out of Stock'
-            : <><Icon name="cart" size={14} /> Add to Cart</>}
-        </button>
+        <div className="pcard__actions-row">
+          <button
+            className={`pcard__wish-inline ${wished ? 'pcard__wish-inline--active' : ''}`}
+            onClick={handleWish}
+            aria-label="Wishlist"
+          >
+            <Icon name={wished ? 'heartFill' : 'heart'} size={15} />
+            {wished ? 'Saved' : ''}
+            {heartBurst && (
+              <span className="heart-burst-container">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`heart-particle heart-particle--${i}`}>♥</span>
+                ))}
+              </span>
+            )}
+          </button>
+          
+          <button
+            className={`pcard__compare-btn-inline ${compared ? 'pcard__compare-btn-inline--active' : ''}`}
+            onClick={handleCompare}
+            aria-label="Compare"
+            title={compared ? 'Remove from Compare' : compareCount >= 3 ? 'Max 3 items' : 'Compare'}
+            style={{ opacity: !compared && compareCount >= 3 ? 0.4 : 1 }}
+          >
+            ⚖ {compared ? 'Comparing' : ''}
+          </button>
+
+          <button
+            className={`pcard__add-btn ${isAdded ? 'pcard__add-btn--added' : ''} ${!product.inStock ? 'pcard__add-btn--disabled' : ''}`}
+            onClick={handleAdd}
+            disabled={!product.inStock}
+          >
+            {isAdded
+              ? <><Icon name="check" size={14} /> Added</>
+              : !product.inStock
+              ? 'Out of Stock'
+              : <><Icon name="cart" size={14} /> Add to Cart</>}
+          </button>
+        </div>
       </div>
     </Link>
   );

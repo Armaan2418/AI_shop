@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
+import { toggleWishlist, selectIsWishlisted } from '../store/wishlistSlice';
+import { toggleCompare, selectIsCompared, selectCompareCount } from '../store/compareSlice';
 import { productService } from '../services/productService';
 import './Home.css';
 
@@ -115,9 +117,13 @@ function Stars({ rating }) {
 }
 
 function ProductCard({ product, onAddToCart }) {
-  const [wished,   setWished]   = useState(false);
+  const dispatch    = useDispatch();
+  const wished      = useSelector(selectIsWishlisted(product._id));
+  const compared    = useSelector(selectIsCompared(product._id));
+  const compareCount = useSelector(selectCompareCount);
   const [added,    setAdded]    = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [heartBurst, setHeartBurst] = useState(false);
 
   const discount = product.originalPrice
     ? Math.round((1 - product.price / product.originalPrice) * 100)
@@ -133,7 +139,17 @@ function ProductCard({ product, onAddToCart }) {
 
   const handleWish = (e) => {
     e.preventDefault();
-    setWished((w) => !w);
+    dispatch(toggleWishlist(product));
+    if (!wished) {
+      setHeartBurst(true);
+      setTimeout(() => setHeartBurst(false), 600);
+    }
+  };
+
+  const handleCompare = (e) => {
+    e.preventDefault();
+    if (!compared && compareCount >= 3) return;
+    dispatch(toggleCompare(product));
   };
 
   return (
@@ -152,9 +168,6 @@ function ProductCard({ product, onAddToCart }) {
         ) : (
           <img src={product.image} alt={product.name} className="product-card__img" onError={() => setImgError(true)} />
         )}
-        <button className={`product-card__wish ${wished ? 'product-card__wish--active' : ''}`} onClick={handleWish} aria-label="Wishlist">
-          <Icon name={wished ? 'heartFill' : 'heart'} size={15} />
-        </button>
         <div className="product-card__badges">
           {discount && <span className="product-card__badge product-card__badge--sale">-{discount}%</span>}
           {product.badge === 'AI Pick' && <span className="product-card__badge product-card__badge--ai">AI Pick</span>}
@@ -172,17 +185,46 @@ function ProductCard({ product, onAddToCart }) {
           <span className="product-card__rating-num">{product.rating}</span>
           <span className="product-card__rating-count">({product.reviewCount.toLocaleString()})</span>
         </div>
-        <div className="product-card__price-row">
+        <div className="product-card__price-row" style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'baseline', flexWrap: 'wrap' }}>
           <span className="product-card__price">₹{product.price.toLocaleString('en-IN')}</span>
-          {product.originalPrice && <span className="product-card__original">₹{product.originalPrice.toLocaleString('en-IN')}</span>}
+          {product.originalPrice && <span className="product-card__original" style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '13px' }}>₹{product.originalPrice.toLocaleString('en-IN')}</span>}
         </div>
-        <button
-          className={`product-card__add-btn ${added ? 'product-card__add-btn--added' : ''} ${!product.inStock ? 'product-card__add-btn--disabled' : ''}`}
-          onClick={handleAdd}
-          disabled={!product.inStock}
-        >
-          {added ? <><Icon name="check" size={15} /> Added to Cart</> : !product.inStock ? 'Out of Stock' : <><Icon name="cart" size={15} /> Add to Cart</>}
-        </button>
+        
+        <div className="pcard__actions-row" style={{ display: 'flex', gap: '8px', marginTop: 'auto', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            className={`pcard__wish-inline ${wished ? 'pcard__wish-inline--active' : ''}`}
+            onClick={handleWish}
+            aria-label="Wishlist"
+          >
+            <Icon name={wished ? 'heartFill' : 'heart'} size={15} />
+            {wished ? 'Saved' : ''}
+            {heartBurst && (
+              <span className="heart-burst-container">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`heart-particle heart-particle--${i}`}>♥</span>
+                ))}
+              </span>
+            )}
+          </button>
+          
+          <button
+            className={`pcard__compare-btn-inline ${compared ? 'pcard__compare-btn-inline--active' : ''}`}
+            onClick={handleCompare}
+            aria-label="Compare"
+            title={compared ? 'Remove from Compare' : compareCount >= 3 ? 'Max 3 items' : 'Compare'}
+            style={{ opacity: !compared && compareCount >= 3 ? 0.4 : 1 }}
+          >
+            ⚖ {compared ? 'Comparing' : ''}
+          </button>
+
+          <button
+            className={`pcard__add-btn ${added ? 'pcard__add-btn--added' : ''} ${!product.inStock ? 'pcard__add-btn--disabled' : ''}`}
+            onClick={handleAdd}
+            disabled={!product.inStock}
+          >
+            {added ? <><Icon name="check" size={15} /> Added</> : !product.inStock ? 'Out of Stock' : <><Icon name="cart" size={15} /> Add to Cart</>}
+          </button>
+        </div>
       </div>
     </Link>
   );
@@ -219,6 +261,26 @@ export default function Home() {
   const [toastMsg,      setToastMsg]      = useState(null);
   const [heroVisible,   setHeroVisible]   = useState(false);
   const [activeFounder, setActiveFounder] = useState(null);
+  const [heroScrollY,   setHeroScrollY]   = useState(0);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const heroRef = useRef(null);
+
+  const sliderProducts = products.filter(p => p.originalPrice && p.price < p.originalPrice).slice(0, 6);
+
+  useEffect(() => {
+    if (sliderProducts.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentSlideIndex(prev => (prev + 1) % sliderProducts.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [sliderProducts.length]);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const onScroll = () => setHeroScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 60);
@@ -279,10 +341,10 @@ export default function Home() {
       {toastMsg && <Toast msg={toastMsg} onClose={() => setToastMsg(null)} />}
 
       {/* HERO */}
-      <section className={`hero ${heroVisible ? 'hero--visible' : ''}`}>
-        <div className="hero__bg-grid" />
+      <section ref={heroRef} className={`hero ${heroVisible ? 'hero--visible' : ''}`}>
+        <div className="hero__bg-grid" style={{ transform: `translateY(${heroScrollY * 0.12}px)` }} />
         <div className="container hero__inner">
-          <div className="hero__text">
+          <div className="hero__text" style={{ transform: `translateY(${heroScrollY * 0.18}px)` }}>
             <div className="hero__eyebrow">
               <span className="hero__eyebrow-pulse" />
               AI-Powered Shopping
@@ -317,7 +379,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <div className="hero__visual">
+          <div className="hero__visual" style={{ transform: `translateY(${heroScrollY * 0.28}px)` }}>
             <div className="hero__device">
               <div className="hero__device-screen">
                 <div className="hero__device-header">
@@ -325,16 +387,54 @@ export default function Home() {
                   <span className="hero__device-title">AIShop</span>
                   <span className="hero__device-live">Live</span>
                 </div>
-                <div className="hero__device-card">
-                  <div className="hero__device-card-img">
-                    <img src="https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-bluetitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1693009278" alt="iPhone" onError={(e) => { e.target.style.display='none'; }} />
-                  </div>
-                  <div className="hero__device-card-info">
-                    <div className="hero__device-badge">AI Recommended</div>
-                    <div className="hero__device-name">iPhone 15 Pro Max</div>
-                    <div className="hero__device-price">₹1,29,900</div>
-                    <div className="hero__device-cta">Add to Cart</div>
-                  </div>
+                <div className="hero__device-slider" style={{ position: 'relative', overflow: 'hidden', height: '125px' }}>
+                  {sliderProducts.length > 0 ? (
+                    sliderProducts.map((p, idx) => {
+                      const discount = Math.round((1 - p.price / p.originalPrice) * 100);
+                      return (
+                        <Link 
+                          to={`/products/${p._id}`} 
+                          key={p._id}
+                          className="hero__device-card"
+                          style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                            opacity: currentSlideIndex === idx ? 1 : 0,
+                            transform: `translateX(${(idx - currentSlideIndex) * 100}%)`,
+                            transition: 'all 0.5s ease-in-out',
+                            textDecoration: 'none',
+                            borderBottom: 'none'
+                          }}
+                        >
+                          <div className="hero__device-card-img">
+                            <img src={p.image} alt={p.name} onError={(e) => { e.target.style.display='none'; }} />
+                          </div>
+                          <div className="hero__device-card-info">
+                            <div className="hero__device-badge">-{discount}% OFF</div>
+                            <div className="hero__device-name">{p.name}</div>
+                            <div className="hero__device-price" style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                              ₹{p.price.toLocaleString('en-IN')}
+                              <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '11px', fontWeight: 500 }}>
+                                ₹{p.originalPrice.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                            <div className="hero__device-cta">Quick Look</div>
+                          </div>
+                        </Link>
+                      );
+                    })
+                  ) : (
+                    <div className="hero__device-card" style={{ borderBottom: 'none' }}>
+                      <div className="hero__device-card-img">
+                        <img src="https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-bluetitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1693009278" alt="iPhone" onError={(e) => { e.target.style.display='none'; }} />
+                      </div>
+                      <div className="hero__device-card-info">
+                        <div className="hero__device-badge">AI Recommended</div>
+                        <div className="hero__device-name">iPhone 15 Pro Max</div>
+                        <div className="hero__device-price">₹1,29,900</div>
+                        <div className="hero__device-cta">Add to Cart</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="hero__device-row">
                   <div className="hero__device-mini"><Icon name="truck" size={14} /><span>Free delivery</span></div>
@@ -342,15 +442,15 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="hero__side-stat hero__side-stat--1">
+            <div className="hero__side-stat hero__side-stat--1" style={{ transform: `translateY(${heroScrollY * 0.35}px)` }}>
               <div className="hero__side-stat-icon"><Icon name="zap" size={16} /></div>
               <div><div className="hero__side-stat-num">2-day</div><div className="hero__side-stat-label">Delivery</div></div>
             </div>
-            <div className="hero__side-stat hero__side-stat--2">
+            <div className="hero__side-stat hero__side-stat--2" style={{ transform: `translateY(${heroScrollY * 0.22}px)` }}>
               <div className="hero__side-stat-icon"><Icon name="star" size={16} /></div>
               <div><div className="hero__side-stat-num">4.9★</div><div className="hero__side-stat-label">Rating</div></div>
             </div>
-            <div className="hero__side-stat hero__side-stat--3">
+            <div className="hero__side-stat hero__side-stat--3" style={{ transform: `translateY(${heroScrollY * 0.4}px)` }}>
               <div className="hero__side-stat-icon"><Icon name="brain" size={16} /></div>
               <div><div className="hero__side-stat-num">AI</div><div className="hero__side-stat-label">Assistant</div></div>
             </div>

@@ -377,6 +377,33 @@
   100% { transform: scale(1); }
 }
 
+/* Wishlist icon button */
+.navbar__wishlist-btn { color: #be185d; }
+.navbar__wishlist-btn:hover { background: #fdf2f8; color: #9d174d; }
+.navbar__wishlist-badge { background: #ec4899 !important; }
+
+/* Camera / AI Visual Search button */
+.navbar__icon-btn--camera {
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12));
+  color: #818cf8;
+  border: 1px solid rgba(99,102,241,0.2);
+}
+.navbar__icon-btn--camera:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(168,85,247,0.22));
+  color: #a5b4fc;
+  border-color: rgba(99,102,241,0.4);
+}
+
+/* User menu inline badge */
+.navbar__user-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: #ec4899; color: #fff;
+  font-size: 10px; font-weight: 700;
+  border-radius: 100px;
+  margin-left: 4px;
+}
+
 .navbar__hamburger {
   display: none;
   flex-direction: column;
