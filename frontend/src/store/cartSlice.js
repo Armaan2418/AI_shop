@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 
 const initialState = {
   items:    [],
@@ -60,11 +60,18 @@ export const selectCartCount    = (s) => s.cart.items.reduce((sum, i) => sum + i
 export const selectCartSubtotal = (s) => s.cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 export const selectCoupon       = (s) => s.cart.coupon;
 export const selectDiscount     = (s) => s.cart.discount;
-export const selectCartTotal    = (s) => {
-  const sub  = s.cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const disc = sub * s.cart.discount;
-  const tax  = Math.round((sub - disc) * 0.18);
-  return { subtotal: sub, discount: disc, tax, total: sub - disc + tax };
-};
+export const selectCartTotal    = createSelector(
+  [selectCartItems, selectCartSubtotal, selectDiscount],
+  (items, sub, discountPct) => {
+    const isScamOnly = items.length > 0 && items.every(i => i.category === 'scam');
+    const disc = sub * discountPct;
+    if (isScamOnly) {
+      return { subtotal: sub, discount: disc, tax: 0, total: sub - disc };
+    }
+    const taxableSubtotal = items.filter(i => i.category !== 'scam').reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const tax = Math.round((taxableSubtotal - (taxableSubtotal * discountPct)) * 0.18);
+    return { subtotal: sub, discount: disc, tax, total: sub - disc + tax };
+  }
+);
 
 export default cartSlice.reducer;

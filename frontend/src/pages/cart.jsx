@@ -225,14 +225,16 @@ export default function Cart() {
               <div className="cart-summary__row">
                 <span>Shipping</span>
                 <span>
-                  {totals.subtotal >= 2000 ? '🎉 Free' : `₹99`}
+                  {(items.length > 0 && items.every(i => i.category === 'scam')) || totals.subtotal >= 2000 ? '🎉 Free' : `₹99`}
                 </span>
               </div>
 
-              <div className="cart-summary__row">
-                <span>Tax (GST)</span>
-                <span>₹{Math.round(totals.tax).toLocaleString('en-IN')}</span>
-              </div>
+              {totals.tax > 0 ? (
+                <div className="cart-summary__row">
+                  <span>Tax (GST)</span>
+                  <span>₹{Math.round(totals.tax).toLocaleString('en-IN')}</span>
+                </div>
+              ) : null}
             </div>
 
               <div className="cart-summary__divider" />

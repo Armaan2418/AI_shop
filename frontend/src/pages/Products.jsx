@@ -19,6 +19,7 @@ const CATEGORIES = [
   { value: 'clothing',    label: 'Clothing',       icon: 'shirt' },
   { value: 'fashion',     label: 'Fashion',        icon: 'sparkles' },
   { value: 'makeup',      label: 'Makeup',         icon: 'makeup' },
+  { value: 'scam',        label: 'Scam',           icon: 'package' },
 ];
 
 const BRANDS = ['All', 'Apple', 'Samsung', 'Sony', 'Google', 'Dell', 'Bose', 'OnePlus', 'Realme', 'HP', 'Lenovo', 'JBL', 'Garmin', 'Fitbit', 'Nintendo', 'Zara', 'MAC', 'NYX', 'Maybelline'];
@@ -123,6 +124,7 @@ function ProductCard({ product, viewMode, onAddToCart, isAdded }) {
     phones: 'phone', laptops: 'laptop', audio: 'headphones',
     wearables: 'watch', gaming: 'gaming', accessories: 'plug',
     clothing: 'shirt', fashion: 'sparkles', makeup: 'makeup',
+    scam: 'package',
   };
 
   return (

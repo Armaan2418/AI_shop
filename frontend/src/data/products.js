@@ -101,6 +101,8 @@ export const MOCK_PRODUCTS = [
   // New gaming — added for comparison
   { _id: '90', name: 'Xbox Series X',            category: 'gaming',      price: 49990,  originalPrice: null,   rating: 4.8, reviewCount: 6200, badge: null,      inStock: true,  brand: 'Microsoft', image: 'https://m.media-amazon.com/images/I/51rR-u1HpwL._SX679_.jpg' },
   { _id: '91', name: 'Steam Deck OLED',          category: 'gaming',      price: 55999,  originalPrice: 59999,  rating: 4.9, reviewCount: 3400, badge: 'AI Pick', inStock: true,  brand: 'Valve',     image: 'https://images.unsplash.com/photo-1627856013091-fed6dc4ee04a?w=500&q=80' },
+  // Scam
+  { _id: '100', name: 'Air from the Moon',       category: 'scam',        price: 20,     originalPrice: 99999,  rating: 0.1, reviewCount: 80085,badge: 'SCAM',    inStock: true,  brand: 'TrustMeBro',image: 'https://images.unsplash.com/photo-1550616158-9a9978dbd9cb?w=500&q=80' },
 ];
 
 // Explicit comparison groups — each array has 3 product IDs that make sense to compare
@@ -345,6 +347,16 @@ export const getProductSpecs = (product) => {
       { label: 'Shelf Life',   value: '24 Months from manufacture' },
       { label: 'Availability', value: product.inStock ? 'In Stock' : 'Out of Stock' },
     ],
+    scam: [
+      { label: 'Brand',        value: 'TrustMeBro Inc' },
+      { label: 'Category',     value: 'Absolute Scam' },
+      { label: 'Price',        value: `₹${product.price.toLocaleString('en-IN')}` },
+      { label: 'Rating',       value: `${product.rating} / 5 (Definitely fake reviews)` },
+      { label: 'Warranty',     value: 'Void immediately upon purchase' },
+      { label: 'Materials',    value: '100% Pure Scam Liquid' },
+      { label: 'Returns',      value: 'Hahahaha. No.' },
+      { label: 'Secret Feature', value: 'Vanishes after payment' },
+    ],
   };
   return specsByCategory[product.category] ?? specsByCategory.accessories;
 };
@@ -360,6 +372,7 @@ export const getProductDescription = (product) => {
     clothing: `The ${product.name} from ${product.brand} combines style and comfort in a single premium piece. Crafted from high-quality materials with meticulous attention to detail, it's designed to keep you looking great — wherever the day takes you.`,
     fashion: `Make a statement with the ${product.name} from ${product.brand}. This premium fashion accessory is crafted with exceptional quality and sophistication — the perfect finishing touch to any outfit.`,
     makeup: `Achieve your best look with the ${product.name} from ${product.brand}. Formulated with skin-loving ingredients and long-lasting pigments, this beauty essential delivers a flawless finish that lasts all day without compromising on comfort.`,
+    scam: `Have you ever wanted to burn exactly ₹20 for absolutely no reason? Enter the ${product.name}! This is a 100% certified scam. We promise you will receive nothing, your expectations will be shattered, and you will totally regret this purchase. If you buy this, the only thing you're getting is a lesson in bad financial decisions. Buy now before it disappears into the void!`,
   };
   return templates[product.category] ?? `${product.name} from ${product.brand} — a premium product at a great price.`;
 };

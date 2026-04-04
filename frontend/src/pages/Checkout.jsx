@@ -25,11 +25,19 @@ const COUNTRIES = ['India', 'USA', 'UK', 'Canada', 'Australia'];
 
 /* ── Price Breakdown Calculator ────────────────────────── */
 function computeBreakdown(items, discountPct, paymentMethod) {
+  const isScamOnly = items.length > 0 && items.every(i => i.category === 'scam');
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const couponDiscount = Math.round(subtotal * discountPct);
   const afterDiscount = subtotal - couponDiscount;
+
+  if (isScamOnly) {
+    return { subtotal, couponDiscount, afterDiscount, delivery: 0, handling: 0, platformFee: 0, gst: 0, codCharge: 0, total: afterDiscount };
+  }
+
   const delivery = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
-  const gst = Math.round(afterDiscount * GST_RATE);
+  const taxableSubtotal = items.filter(i => i.category !== 'scam').reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const gst = Math.round((taxableSubtotal - (taxableSubtotal * discountPct)) * GST_RATE);
+  
   const codCharge = paymentMethod === 'cod' ? COD_CHARGE : 0;
   const total = afterDiscount + delivery + HANDLING_FEE + PLATFORM_FEE + gst + codCharge;
   return { subtotal, couponDiscount, afterDiscount, delivery, handling: HANDLING_FEE, platformFee: PLATFORM_FEE, gst, codCharge, total };
