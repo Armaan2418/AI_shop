@@ -63,7 +63,7 @@ export const selectDiscount     = (s) => s.cart.discount;
 export const selectCartTotal    = (s) => {
   const sub  = s.cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const disc = sub * s.cart.discount;
-  const tax  = (sub - disc) * 0.08;
+  const tax  = Math.round((sub - disc) * 0.18);
   return { subtotal: sub, discount: disc, tax, total: sub - disc + tax };
 };
 
