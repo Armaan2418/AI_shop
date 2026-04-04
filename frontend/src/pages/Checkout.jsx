@@ -43,7 +43,7 @@ function RealQRCode({ amount }) {
   const [qrDataUrl, setQrDataUrl] = useState(null);
 
   // Build UPI payment deep link with the actual amount
-  const upiLink = `upi://pay?pa=aishop@ybl&pn=AI+Shop&am=${amount}&cu=INR&tn=Order+Payment`;
+  const upiLink = `upi://pay?pa=7878148960@ptaxis&pn=Prachi+Khandelwal&am=${amount}&cu=INR&tn=Order+Payment`;
 
   useEffect(() => {
     // Use QRServer API to generate a real scannable QR code
@@ -340,8 +340,8 @@ function PaymentGateway({ method, amount, payment, onSuccess, onCancel }) {
               </div>
               <div className="pg-upi-or"><span>OR pay using UPI ID</span></div>
               <div className="pg-upi-id-row">
-                <span className="pg-upi-id-value">aishop@ybl</span>
-                <button className="pg-copy-btn" onClick={() => navigator.clipboard?.writeText('aishop@ybl')}>
+                <span className="pg-upi-id-value">7878148960@ptaxis</span>
+                <button className="pg-copy-btn" onClick={() => navigator.clipboard?.writeText('7878148960@ptaxis')}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                   Copy
                 </button>
