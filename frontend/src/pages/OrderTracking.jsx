@@ -73,7 +73,7 @@ export default function OrderTracking() {
       let found = null;
       const local = localStorage.getItem('aishop_orders');
       if (local) {
-        try { found = JSON.parse(local).find(o => o._id === id); } catch(e) {}
+        try { found = JSON.parse(local).find(o => o._id === id); } catch { /* ignore */ }
       }
 
       // Then try hardcoded mocks

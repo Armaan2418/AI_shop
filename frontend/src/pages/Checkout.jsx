@@ -47,18 +47,10 @@ const INR = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 
 /* ── Real Scannable QR Code (encoded amount via UPI deep link) ── */
 function RealQRCode({ amount }) {
-  const canvasRef = useRef(null);
-  const [qrDataUrl, setQrDataUrl] = useState(null);
-
   // Build UPI payment deep link with the actual amount
   const upiLink = `upi://pay?pa=7878148960@ptaxis&pn=Prachi+Khandelwal&am=${amount}&cu=INR&tn=Order+Payment`;
-
-  useEffect(() => {
-    // Use QRServer API to generate a real scannable QR code
-    const encoded = encodeURIComponent(upiLink);
-    const url = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encoded}&bgcolor=ffffff&color=0f172a&margin=10&qzone=2`;
-    setQrDataUrl(url);
-  }, [upiLink]);
+  const encoded = encodeURIComponent(upiLink);
+  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encoded}&bgcolor=ffffff&color=0f172a&margin=10&qzone=2`;
 
   if (!qrDataUrl) {
     return (

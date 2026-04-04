@@ -21,6 +21,17 @@ export default function VisualSearch() {
   const fileRef = useRef(null);
   const intervalRef = useRef(null);
 
+  const handleClose = () => {
+    clearInterval(intervalRef.current);
+    setOpen(false);
+    setDragging(false);
+    setPreviewUrl(null);
+    setAnalyzing(false);
+    setProgress(0);
+    setStatusText('');
+    setDone(false);
+  };
+
   // Listen for global open event fired by Navbar
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -39,18 +50,9 @@ export default function VisualSearch() {
     const handler = (e) => { if (e.key === 'Escape') handleClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  });
+  }, [open]);
 
-  const handleClose = () => {
-    clearInterval(intervalRef.current);
-    setOpen(false);
-    setDragging(false);
-    setPreviewUrl(null);
-    setAnalyzing(false);
-    setProgress(0);
-    setStatusText('');
-    setDone(false);
-  };
+
 
   const startAnalysis = (file) => {
     const url = URL.createObjectURL(file);
@@ -61,14 +63,12 @@ export default function VisualSearch() {
 
     // Progress animation
     let p = 0;
-    let step = 0;
     intervalRef.current = setInterval(() => {
       p += Math.random() * 12 + 4;
       if (p >= 100) { p = 100; clearInterval(intervalRef.current); }
       setProgress(Math.min(p, 100));
       const idx = Math.min(Math.floor((p / 100) * (FAKE_RESULTS.length - 1)), FAKE_RESULTS.length - 1);
       setStatusText(FAKE_RESULTS[idx]);
-      step++;
       if (p >= 100) {
         setStatusText(FAKE_RESULTS[FAKE_RESULTS.length - 1]);
         setDone(true);

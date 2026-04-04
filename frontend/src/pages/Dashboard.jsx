@@ -114,7 +114,7 @@ export default function Dashboard() {
             const localIds = new Set(parsedLocal.map(o => o._id));
             const uniqueMocks = MOCK_ORDERS.filter(o => !localIds.has(o._id));
             setOrders([...parsedLocal, ...uniqueMocks]);
-          } catch(e) {
+          } catch {
             setOrders(MOCK_ORDERS);
           }
         }
@@ -270,8 +270,6 @@ export default function Dashboard() {
 
 /* ── Order Card Component (with product images) ── */
 function OrderCard({ order }) {
-  const primaryItem = order.items?.[0];
-  const primaryImage = typeof primaryItem === 'object' ? (primaryItem.image || '') : '';
   const extraCount = (order.items?.length || 1) - 1;
   const payMethod = order.paymentMethod || 'card';
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
@@ -192,7 +192,6 @@ const COLOR_IMAGE_POOL = {
 function buildProductData(rawProduct) {
   const cat      = rawProduct.category ?? 'accessories';
   const variants = CATEGORY_VARIANTS[cat] ?? CATEGORY_VARIANTS.accessories;
-  const pool     = COLOR_IMAGE_POOL[cat] ?? COLOR_IMAGE_POOL.accessories;
   // Build a map: colorIndex -> [4 images].
   // First color uses the product's own image as hero; other colors use pool images.
   const colorImages = {};
@@ -318,6 +317,7 @@ export default function ProductDetail() {
     // Update product when route id changes
     const rawProduct = MOCK_PRODUCTS.find(p => p._id === id);
     if (rawProduct) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProduct(buildProductData(rawProduct));
     }
     const load = async () => {
