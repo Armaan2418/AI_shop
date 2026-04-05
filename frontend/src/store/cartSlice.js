@@ -68,7 +68,7 @@ export const selectCartTotal    = createSelector(
     if (isScamOnly) {
       return { subtotal: sub, discount: disc, tax: 0, total: sub - disc };
     }
-    const taxableSubtotal = items.filter(i => i.category !== 'scam').reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const taxableSubtotal = items.filter(i => i.category !== 'scam' && !i.noTax).reduce((sum, i) => sum + i.price * i.quantity, 0);
     const tax = Math.round((taxableSubtotal - (taxableSubtotal * discountPct)) * 0.18);
     return { subtotal: sub, discount: disc, tax, total: sub - disc + tax };
   }

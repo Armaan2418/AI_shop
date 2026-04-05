@@ -75,4 +75,6 @@ export const MOCK_PRODUCTS = [
   { _id: '87', name: 'Urban Decay Naked Palette',category: 'makeup',      price: 4900,   originalPrice: 5500,   rating: 4.8, reviewCount: 4200, badge: null,      inStock: true,  brand: 'Urban Decay' },
   { _id: '88', name: 'Maybelline Fit Me Foundation',category: 'makeup',   price: 649,    originalPrice: 799,    rating: 4.5, reviewCount: 12500,badge: 'Sale',    inStock: true,  brand: 'Maybelline' },
   { _id: '89', name: 'Laura Mercier Setting Powder',category: 'makeup',   price: 3600,   originalPrice: null,   rating: 4.9, reviewCount: 2800, badge: 'AI Pick', inStock: true,  brand: 'Laura Mercier' },
+  // Groceries
+  { _id: '101', name: 'Kaali Mirch (Black Pepper)', category: 'groceries', price: 150, originalPrice: null, rating: 4.9, reviewCount: 840, badge: 'Spice', inStock: true, brand: 'Organic Farms', noTax: true },
 ];
