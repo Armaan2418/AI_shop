@@ -74,6 +74,7 @@ const startServer = async () => {
         await connectDB();
         console.log("✅ MongoDB Connected Successfully");
 
+        // Listen for Vercel Web Services or Local Dev
         app.listen(PORT, () => {
             console.log(`🚀 Server running at: http://localhost:${PORT}`);
         });
@@ -84,3 +85,6 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Export the Express API for Vercel
+export default app;
