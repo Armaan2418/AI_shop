@@ -245,7 +245,7 @@ export default function Navbar() {
                         <Link to="/dashboard"          className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="dashboard" /><span>Dashboard</span></Link>
                         <Link to="/dashboard"          className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="orders"    /><span>My Orders</span></Link>
                         <Link to="/wishlist" className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="heart" /><span>Wishlist {wishlistCount > 0 && <span className="navbar__user-badge">{wishlistCount}</span>}</span></Link>
-                        <Link to="/dashboard/settings" className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="settings"  /><span>Settings</span></Link>
+                        <Link to="/dashboard" className="navbar__user-item" onClick={() => setUserMenuOpen(false)}><Icon name="settings"  /><span>Settings</span></Link>
                       </div>
                       <div className="navbar__user-divider" />
                       <div className="navbar__user-body">

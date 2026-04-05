@@ -126,12 +126,14 @@ export default function Register() {
     if (!validate()) return;
     dispatch(loginStart());
     try {
-      const data = await authService.register({
+      await authService.register({
         name:     form.name.trim(),
         email:    form.email.trim(),
         password: form.password,
       });
-      dispatch(loginSuccess({ user: data.user, token: data.token }));
+      // Backend only sends a verification email — no user/token returned.
+      // Reset loading state and send user to check their inbox.
+      dispatch(loginFailure(null)); // clears loading, keeps state clean
       navigate('/verify-email');
     } catch (err) {
       dispatch(loginFailure(err.message));

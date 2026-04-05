@@ -1,37 +1,30 @@
 import api from './api';
 
 export const authService = {
-  // POST /api/auth/register  →  { user, token }
-  register: (data) => api.post('/auth/register', data),
+  // POST /api/v1/user/register  →  { message }
+  register: (data) => api.post('/user/register', data),
 
-  // POST /api/auth/login  →  { user, token }
-  login: async (data) => {
-    try {
-      return await api.post('/auth/login', data);
-    } catch (err) {
-      console.warn('Backend login failed, using mock auth fallback.', err);
-      return { 
-        user: { _id: 'mock_user_123', name: 'Test User', email: data.email, isVerified: true }, 
-        token: 'mock_token_12345'
-      };
-    }
-  },
+  // POST /api/v1/user/login  →  { user, token }
+  login: (data) => api.post('/user/login', data),
 
-  // POST /api/auth/verify-email  →  { message }
-  verifyEmail: (code) => api.post('/auth/verify-email', { code }),
+  // POST /api/v1/user/verify (with Authorization: Bearer <token>)
+  verifyEmail: (token) => api.post('/user/verify', null, token),
 
-  // POST /api/auth/resend-verification  →  { message }
-  resendVerification: () => api.post('/auth/resend-verification'),
+  // POST /api/v1/user/resend-verification
+  resendVerification: (email) => api.post('/user/resend-verification', { email }),
 
-  // GET  /api/auth/me  →  { user }
-  getProfile: () => api.get('/auth/me'),
+  // POST /api/v1/user/forgot-password
+  forgotPassword: (email) => api.post('/user/forgot-password', { email }),
 
-  // PUT  /api/auth/me  →  { user }
-  updateProfile: (data) => api.put('/auth/me', data),
+  // POST /api/v1/user/verify-otp/:email
+  verifyOTP: (email, otp) => api.post(`/user/verify-otp/${email}`, { otp }),
 
-  // POST /api/auth/forgot-password  →  { message }
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  // POST /api/v1/user/change-password/:email
+  changePassword: (email, data) => api.post(`/user/change-password/${email}`, data),
 
-  // POST /api/auth/reset-password  →  { message }
-  resetPassword: (data) => api.post('/auth/reset-password', data),
+  // POST /api/v1/user/logout
+  logout: () => api.post('/user/logout'),
+
+  // GET  /api/v1/user/get-user/:userId
+  getProfile: (userId) => api.get(`/user/get-user/${userId}`),
 };

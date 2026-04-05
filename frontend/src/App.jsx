@@ -6,6 +6,7 @@ import Navbar        from './components/Navbar';
 
 // Global floating components
 import CompareDrawer from './components/CompareDrawer';
+import ChatBot      from './components/ChatBot';
 import VisualSearch  from './components/VisualSearch';
 
 // Public pages
@@ -59,6 +60,7 @@ export default function App() {
       {/* Global overlays — always mounted */}
       <CompareDrawer />
       <VisualSearch />
+      <ChatBot />
     </BrowserRouter>
   );
 }

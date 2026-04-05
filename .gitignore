@@ -1,4 +1,12 @@
 node_modules
 build
 dist
+
+# Never commit real secrets
 .env
+.env.local
+.env.local.*
+
+# OS junk
+.DS_Store
+Thumbs.db

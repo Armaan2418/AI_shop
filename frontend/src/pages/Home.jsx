@@ -361,7 +361,7 @@ export default function Home() {
               <Link to="/products" className="hero__btn hero__btn--primary">
                 Browse Products <Icon name="arrowRight" size={16} />
               </Link>
-              <button className="hero__btn hero__btn--secondary" onClick={() => document.getElementById('ai-chat-btn')?.click()}>
+              <button className="hero__btn hero__btn--secondary" onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}>
                 <Icon name="brain" size={16} /> Talk to AI
               </button>
             </div>
@@ -558,14 +558,14 @@ export default function Home() {
                 </p>
                 <div className="ai-banner__chips">
                   {AI_CHIPS.map((chip, i) => (
-                    <button key={i} className="ai-banner__chip" onClick={() => document.getElementById('ai-chat-btn')?.click()}>
+                    <button key={i} className="ai-banner__chip" onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}>
                       {chip}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            <button className="hero__btn hero__btn--primary ai-banner__cta" onClick={() => document.getElementById('ai-chat-btn')?.click()}>
+            <button className="hero__btn hero__btn--primary ai-banner__cta" onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}>
               <Icon name="brain" size={16} /> Start AI Chat
             </button>
           </div>
