@@ -8,7 +8,7 @@ import {
 } from '../store/cartSlice';
 import { selectIsAuth } from '../store/authSlice';
 import { cartService } from '../services/cartService';
-import './Cart.css';
+import './cart.css';
 
 function LoginPromptModal({ onClose, message }) {
   return (
