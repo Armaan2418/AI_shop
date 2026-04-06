@@ -59,6 +59,7 @@ export default function Login() {
   const { loading, error } = useSelector((s) => s.auth);
 
   const from = location.state?.from?.pathname || '/';
+  const successMsg = location.state?.successMsg || null;
 
   const [form,        setForm]        = useState({ email: '', password: '' });
   const [showPass,    setShowPass]    = useState(false);
@@ -103,8 +104,7 @@ export default function Login() {
     try {
       const data = await authService.login({ email: form.email, password: form.password });
       dispatch(loginSuccess({ user: data.user, token: data.token }));
-      if (!data.user.isVerified) navigate('/verify-email');
-      else navigate(from, { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       dispatch(loginFailure(err.message));
     }
@@ -183,6 +183,14 @@ export default function Login() {
             <h1 className="auth-card__title">Welcome back</h1>
             <p className="auth-card__sub">Sign in to your AIShop account</p>
           </div>
+
+          {/* Success alert (after registration) */}
+          {successMsg && (
+            <div className="auth-alert" style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#15803d', marginBottom: 16 }}>
+              <span className="auth-alert__icon"><Icon name="check" size={15} /></span>
+              <span>{successMsg}</span>
+            </div>
+          )}
 
           {/* Error alert */}
           {error && (

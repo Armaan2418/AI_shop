@@ -131,11 +131,8 @@ export default function Register() {
         email:    form.email.trim(),
         password: form.password,
       });
-      // Backend only sends a verification email — no user/token returned.
-      // Store email so /verify-email page can offer resend without asking user to retype.
-      sessionStorage.setItem('pendingVerifyEmail', form.email.trim().toLowerCase());
-      dispatch(loginFailure(null)); // clears loading, keeps state clean
-      navigate('/verify-email');
+      dispatch(loginFailure(null)); // clears loading
+      navigate('/login', { state: { successMsg: '✅ Account created! You can now sign in.' } });
     } catch (err) {
       dispatch(loginFailure(err.message));
     }
