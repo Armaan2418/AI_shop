@@ -1,4 +1,8 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
+import { promisify } from "util";
+
+const resolve4 = promisify(dns.resolve4);
 
 export const sendOTPMail = async (otp, email) => {
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
@@ -9,23 +13,35 @@ export const sendOTPMail = async (otp, email) => {
   const user = process.env.MAIL_USER.trim();
   const pass = process.env.MAIL_PASS.replace(/\s+/g, "");
 
+  // Resolve smtp.gmail.com to IPv4 explicitly — Railway's DNS resolves to IPv6 (unreachable)
+  let gmailHost = "smtp.gmail.com";
+  try {
+    const [ipv4] = await resolve4("smtp.gmail.com");
+    gmailHost = ipv4;
+    console.log(`📧 OTP: Resolved smtp.gmail.com → ${gmailHost} (IPv4)`);
+  } catch (dnsErr) {
+    console.warn("⚠️ DNS resolve4 failed, falling back to hostname:", dnsErr.message);
+  }
+
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: gmailHost,
     port: 465,
     secure: true,
     auth: { user, pass },
     connectionTimeout: 20000,
     socketTimeout: 20000,
     greetingTimeout: 15000,
-    tls: { rejectUnauthorized: false },
-    family: 4, // Force IPv4 — Railway resolves Gmail to IPv6 which is unreachable
+    tls: {
+      rejectUnauthorized: false,
+      servername: "smtp.gmail.com",
+    },
   });
 
   try {
     await transporter.verify();
     console.log("✅ SMTP connection verified for OTP.");
   } catch (verifyErr) {
-    console.error("❌ SMTP verify failed:", verifyErr.message, verifyErr.code);
+    console.error("❌ SMTP verify failed:", verifyErr.message, "| code:", verifyErr.code);
     throw new Error("Email sending failed.");
   }
 

@@ -1,4 +1,8 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
+import { promisify } from "util";
+
+const resolve4 = promisify(dns.resolve4);
 
 export const sendVerificationEmail = async (token, email) => {
   // Guard: fast-fail if credentials missing
@@ -8,30 +12,41 @@ export const sendVerificationEmail = async (token, email) => {
   }
 
   const user = process.env.MAIL_USER.trim();
-  const pass = process.env.MAIL_PASS.replace(/\s+/g, ""); // strip any accidental spaces
+  const pass = process.env.MAIL_PASS.replace(/\s+/g, ""); // strip spaces from app password
 
-  console.log(`📧 Attempting to send verification email to: ${email}`);
-  console.log(`📧 Using MAIL_USER: ${user}`);
-  console.log(`📧 MAIL_PASS length: ${pass.length} chars`);
+  console.log(`📧 Sending verification email to: ${email}`);
+  console.log(`📧 MAIL_USER: ${user} | MAIL_PASS length: ${pass.length}`);
+
+  // Resolve smtp.gmail.com to IPv4 explicitly — Railway's DNS resolves to IPv6 (unreachable)
+  let gmailHost = "smtp.gmail.com";
+  try {
+    const [ipv4] = await resolve4("smtp.gmail.com");
+    gmailHost = ipv4;
+    console.log(`📧 Resolved smtp.gmail.com → ${gmailHost} (IPv4)`);
+  } catch (dnsErr) {
+    console.warn("⚠️ DNS resolve4 failed, falling back to hostname:", dnsErr.message);
+  }
 
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: gmailHost,
     port: 465,
-    secure: true, // SSL
+    secure: true,
     auth: { user, pass },
     connectionTimeout: 20000,
     socketTimeout: 20000,
     greetingTimeout: 15000,
-    tls: { rejectUnauthorized: false },
-    family: 4, // Force IPv4 — Railway resolves Gmail to IPv6 which is unreachable
+    tls: {
+      rejectUnauthorized: false,
+      servername: "smtp.gmail.com", // SNI: must match cert even if host is an IP
+    },
   });
 
-  // Verify auth before sending — logs the real SMTP error
+  // Verify auth before sending — gives exact SMTP error in logs
   try {
     await transporter.verify();
-    console.log("✅ SMTP connection verified successfully.");
+    console.log("✅ SMTP connection verified OK.");
   } catch (verifyErr) {
-    console.error("❌ SMTP verify failed:", verifyErr.message, verifyErr.code);
+    console.error("❌ SMTP verify failed:", verifyErr.message, "| code:", verifyErr.code);
     throw new Error("Email service is currently unavailable.");
   }
 
@@ -95,5 +110,5 @@ export const sendVerificationEmail = async (token, email) => {
     `,
   });
 
-  console.log("✅ Verification email sent to:", email);
+  console.log("✅ Verification email sent successfully to:", email);
 };
