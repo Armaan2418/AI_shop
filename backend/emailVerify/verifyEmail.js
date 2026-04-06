@@ -5,11 +5,19 @@ export const sendVerificationEmail = async (token, email) => {
   try {
     // 1. Create transporter inside function (more reliable for serverless)
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Use TLS
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, '') : '', // Sanitize spaces
       },
+      connectionTimeout: 5000,
+      socketTimeout: 5000,
+      greetingTimeout: 5000,
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     /**
