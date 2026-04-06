@@ -3,14 +3,21 @@ import "dotenv/config";
 
 export const sendVerificationEmail = async (token, email) => {
   try {
-    // 1. Create transporter inside function (more reliable for serverless)
+    // Guard: fail fast if credentials not configured (avoids 30s timeout)
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      throw new Error('Email credentials (MAIL_USER / MAIL_PASS) are not set in environment variables.');
+    }
+
+    const cleanPass = process.env.MAIL_PASS.replace(/\s+/g, ''); // strip spaces from app password
+
+    // Port 465 + secure:true (direct SSL) is more reliable on cloud hosts than 587 STARTTLS
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports (STARTTLS)
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, '') : '', // Sanitize spaces
+        pass: cleanPass,
       },
       connectionTimeout: 30000,
       socketTimeout: 30000,

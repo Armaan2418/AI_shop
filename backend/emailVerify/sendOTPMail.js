@@ -3,13 +3,20 @@ import "dotenv/config";
 
 export const sendOTPMail = async (otp, email) => {
   try {
+    // Guard: fail fast if credentials not configured (avoids 30s timeout)
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      throw new Error('Email credentials (MAIL_USER / MAIL_PASS) are not set in environment variables.');
+    }
+
+    const cleanPass = process.env.MAIL_PASS.replace(/\s+/g, '');
+
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, '') : '',
+        pass: cleanPass,
       },
       connectionTimeout: 30000,
       socketTimeout: 30000,
