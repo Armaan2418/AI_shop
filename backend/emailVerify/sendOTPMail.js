@@ -7,7 +7,7 @@ export const sendOTPMail = async (token, email) => {
       service: "gmail",
       auth: {
         user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\\s+/g, '') : '',
       },
     });
 
