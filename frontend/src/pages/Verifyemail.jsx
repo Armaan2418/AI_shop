@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { verifyEmail } from '../store/authSlice';
 import { authService } from '../services/authService';
@@ -7,14 +7,16 @@ import './Login.css';
 
 export default function Verifyemail() {
   const dispatch        = useDispatch();
+  const navigate        = useNavigate();
   const [params]        = useSearchParams();
   const token           = params.get('token');
 
-  const [status,      setStatus]      = useState('idle');   // idle | loading | success | error
-  const [message,     setMessage]     = useState('');
-  const [resendState, setResendState] = useState('idle');   // idle | sending | sent | error
-  const [resendMsg,   setResendMsg]   = useState('');
-  const [countdown,   setCountdown]   = useState(0);        // cooldown seconds
+  const [status,        setStatus]      = useState('idle');   // idle | loading | success | error
+  const [message,       setMessage]     = useState('');
+  const [resendState,   setResendState] = useState('idle');   // idle | sending | sent | error
+  const [resendMsg,     setResendMsg]   = useState('');
+  const [countdown,     setCountdown]   = useState(0);        // cooldown seconds
+  const [redirectCount, setRedirectCount] = useState(3);     // login redirect countdown
 
   // Email stored by Register.jsx after a successful registration call
   const pendingEmail = sessionStorage.getItem('pendingVerifyEmail') || '';
@@ -36,6 +38,22 @@ export default function Verifyemail() {
     };
     doVerify();
   }, [token, dispatch]);
+
+  // Auto-redirect to /login after successful verification
+  useEffect(() => {
+    if (status !== 'success') return;
+    const id = setInterval(() => {
+      setRedirectCount((c) => {
+        if (c <= 1) {
+          clearInterval(id);
+          navigate('/login');
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [status, navigate]);
 
   // Countdown timer for resend cooldown
   useEffect(() => {
@@ -195,8 +213,11 @@ export default function Verifyemail() {
             <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, marginBottom: 12 }}>
               Email Verified!
             </h1>
-            <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.6, marginBottom: 32 }}>
-              Your account is now active. You can sign in and start shopping.
+            <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.6, marginBottom: 8 }}>
+              Your account is now active. Redirecting to sign in…
+            </p>
+            <p style={{ color: '#60a5fa', fontSize: 22, fontWeight: 700, marginBottom: 24 }}>
+              {redirectCount}
             </p>
             <Link
               to="/login"
@@ -207,7 +228,7 @@ export default function Verifyemail() {
                 fontWeight: 600, fontSize: 15, textDecoration: 'none',
               }}
             >
-              Sign In →
+              Sign In now →
             </Link>
           </>
         )}
