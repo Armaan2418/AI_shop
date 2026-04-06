@@ -23,6 +23,7 @@ export const sendVerificationEmail = async (token, email) => {
     socketTimeout: 20000,
     greetingTimeout: 15000,
     tls: { rejectUnauthorized: false },
+    family: 4, // Force IPv4 — Railway resolves Gmail to IPv6 which is unreachable
   });
 
   // Verify auth before sending — logs the real SMTP error

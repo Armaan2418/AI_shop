@@ -18,6 +18,7 @@ export const sendOTPMail = async (otp, email) => {
     socketTimeout: 20000,
     greetingTimeout: 15000,
     tls: { rejectUnauthorized: false },
+    family: 4, // Force IPv4 — Railway resolves Gmail to IPv6 which is unreachable
   });
 
   try {
