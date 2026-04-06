@@ -1,23 +1,23 @@
 import nodemailer from "nodemailer";
 import "dotenv/config";
 
-// 1. Create transporter once (more efficient)
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\\s+/g, '') : '', // Sanitize spaces
-  },
-});
-
 export const sendVerificationEmail = async (token, email) => {
   try {
+    // 1. Create transporter inside function (more reliable for serverless)
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, '') : '', // Sanitize spaces
+      },
+    });
+
     /**
      * 2. UPDATED URL
-     * Port 5174: Matches your Vite current running port.
-     * /verify/: Matches your Route path in App.jsx.
+     * Uses FRONTEND_URL from environment or falls back to production link
      */
-    const verificationLink = `http://localhost:5173/verify-email?token=${token}`;
+    const baseUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : 'https://ai-shop-lac.vercel.app';
+    const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
     const mailConfigurations = {
       from: `"E-kart Support" <${process.env.MAIL_USER}>`,
