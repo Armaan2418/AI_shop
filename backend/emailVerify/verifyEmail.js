@@ -1,54 +1,12 @@
-import nodemailer from "nodemailer";
-import dns from "dns";
-import { promisify } from "util";
-
-const resolve4 = promisify(dns.resolve4);
+import { Resend } from "resend";
 
 export const sendVerificationEmail = async (token, email) => {
-  // Guard: fast-fail if credentials missing
-  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-    console.error("❌ MAIL_USER or MAIL_PASS not set in environment.");
+  if (!process.env.RESEND_API_KEY) {
+    console.error("❌ RESEND_API_KEY not set in environment.");
     throw new Error("Email credentials not configured.");
   }
 
-  const user = process.env.MAIL_USER.trim();
-  const pass = process.env.MAIL_PASS.replace(/\s+/g, ""); // strip spaces from app password
-
-  console.log(`📧 Sending verification email to: ${email}`);
-  console.log(`📧 MAIL_USER: ${user} | MAIL_PASS length: ${pass.length}`);
-
-  // Resolve smtp.gmail.com to IPv4 explicitly — Railway's DNS resolves to IPv6 (unreachable)
-  let gmailHost = "smtp.gmail.com";
-  try {
-    const [ipv4] = await resolve4("smtp.gmail.com");
-    gmailHost = ipv4;
-    console.log(`📧 Resolved smtp.gmail.com → ${gmailHost} (IPv4)`);
-  } catch (dnsErr) {
-    console.warn("⚠️ DNS resolve4 failed, falling back to hostname:", dnsErr.message);
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: gmailHost,
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-    connectionTimeout: 20000,
-    socketTimeout: 20000,
-    greetingTimeout: 15000,
-    tls: {
-      rejectUnauthorized: false,
-      servername: "smtp.gmail.com", // SNI: must match cert even if host is an IP
-    },
-  });
-
-  // Verify auth before sending — gives exact SMTP error in logs
-  try {
-    await transporter.verify();
-    console.log("✅ SMTP connection verified OK.");
-  } catch (verifyErr) {
-    console.error("❌ SMTP verify failed:", verifyErr.message, "| code:", verifyErr.code);
-    throw new Error("Email service is currently unavailable.");
-  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const baseUrl = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.replace(/\/$/, "")
@@ -56,10 +14,13 @@ export const sendVerificationEmail = async (token, email) => {
   const verificationLink = `${baseUrl}/verify-email?token=${token}`;
   const loginLink = `${baseUrl}/login`;
 
-  await transporter.sendMail({
-    from: `"E-kart Support" <${user}>`,
-    to: email,
-    subject: "✅ Verify your E-kart account",
+  console.log(`📧 Sending verification email to: ${email}`);
+  console.log(`📧 Verification link: ${verificationLink}`);
+
+  const { data, error } = await resend.emails.send({
+    from: "AIShop <onboarding@resend.dev>",
+    to: [email],
+    subject: "✅ Verify your AIShop account",
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; padding: 40px 20px;">
         <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
@@ -110,5 +71,10 @@ export const sendVerificationEmail = async (token, email) => {
     `,
   });
 
-  console.log("✅ Verification email sent successfully to:", email);
+  if (error) {
+    console.error("❌ Resend error (verifyEmail):", error);
+    throw new Error("Email service is currently unavailable.");
+  }
+
+  console.log("✅ Verification email sent successfully to:", email, "| id:", data?.id);
 };
