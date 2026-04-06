@@ -4,7 +4,7 @@
 //  PRODUCTION: set VITE_API_URL in Vercel env settings
 // =====================================================
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://aishop-production.up.railway.app/api/v1';
+export const BASE_URL = 'https://aishop-production.up.railway.app/api/v1';
 
 // Attach JWT token to every request automatically
 const getHeaders = (isMultipart = false, customToken = null) => {

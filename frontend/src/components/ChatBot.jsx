@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ChatBot.css';
 
-const API_BASE = `${import.meta.env.VITE_API_URL || 'https://aishop-production.up.railway.app/api/v1'}/ai`;
+const API_BASE = 'https://aishop-production.up.railway.app/api/v1/ai';
 
 // ── Format ₹ price ───────────────────────────────────────────────────────────
 const fmt = (n) => `₹${Number(n).toLocaleString('en-IN')}`;
