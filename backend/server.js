@@ -52,8 +52,13 @@ app.use(cookieParser());
  * 4. API ROUTES
  */
 app.use('/api/v1/user', userRoute);
+app.use('/v1/user', userRoute); // for Vercel
+
 app.use('/api/products', productRoute); 
-app.use('/api/v1/ai', aiRoute); // Added this: URL will be http://localhost:8000/api/v1/ai/get
+app.use('/products', productRoute); // for Vercel
+
+app.use('/api/v1/ai', aiRoute);
+app.use('/v1/ai', aiRoute); // for Vercel // Added this: URL will be http://localhost:8000/api/v1/ai/get
 
 /**
  * 5. HEALTH CHECK
@@ -80,7 +85,7 @@ const startServer = async () => {
         });
     } catch (error) {
         console.error("❌ Server failed to start:");
-        process.exit(1); 
+        // No process.exit(1) so Vercel Serverless doesn't permanently close 
     }
 };
 
