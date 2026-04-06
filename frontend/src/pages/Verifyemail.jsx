@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { verifyEmail } from '../store/authSlice';
@@ -10,9 +10,14 @@ export default function Verifyemail() {
   const [params]        = useSearchParams();
   const token           = params.get('token');
 
-  const [status,  setStatus]  = useState('idle');    // idle | loading | success | error
-  const [message, setMessage] = useState('');
-  const [resent,  setResent]  = useState(false);
+  const [status,      setStatus]      = useState('idle');   // idle | loading | success | error
+  const [message,     setMessage]     = useState('');
+  const [resendState, setResendState] = useState('idle');   // idle | sending | sent | error
+  const [resendMsg,   setResendMsg]   = useState('');
+  const [countdown,   setCountdown]   = useState(0);        // cooldown seconds
+
+  // Email stored by Register.jsx after a successful registration call
+  const pendingEmail = sessionStorage.getItem('pendingVerifyEmail') || '';
 
   // Auto-verify when a token is present in the URL
   useEffect(() => {
@@ -20,8 +25,9 @@ export default function Verifyemail() {
     const doVerify = async () => {
       setStatus('loading');
       try {
-        await authService.verifyEmail(token);   // passes token as custom Bearer header
+        await authService.verifyEmail(token);   // sends Bearer token header to backend
         dispatch(verifyEmail());                 // mark verified in Redux
+        sessionStorage.removeItem('pendingVerifyEmail'); // clean up stored email
         setStatus('success');
       } catch (err) {
         setMessage(err.message || 'Verification failed. The link may have expired.');
@@ -31,16 +37,33 @@ export default function Verifyemail() {
     doVerify();
   }, [token, dispatch]);
 
-  const handleResend = async () => {
-    setResent(false);
-    try {
-      // We need the user's email — ask them to go back to login/register
-      alert('Please log in and use the "Resend verification" option if available, or register again with your email.');
-    } catch {
-      /* silently fail */
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const id = setInterval(() => setCountdown((c) => c - 1), 1000);
+    return () => clearInterval(id);
+  }, [countdown]);
+
+  const handleResend = useCallback(async () => {
+    if (!pendingEmail) {
+      setResendState('error');
+      setResendMsg('Could not determine your email. Please register again.');
+      return;
     }
-    setResent(true);
-  };
+    if (countdown > 0) return; // still cooling down
+
+    setResendState('sending');
+    setResendMsg('');
+    try {
+      await authService.resendVerification(pendingEmail);
+      setResendState('sent');
+      setResendMsg(`New link sent to ${pendingEmail}`);
+      setCountdown(60); // 60-second cooldown to prevent spam
+    } catch (err) {
+      setResendState('error');
+      setResendMsg(err.message || 'Failed to resend. Please try again.');
+    }
+  }, [pendingEmail, countdown]);
 
   return (
     <div
@@ -72,25 +95,56 @@ export default function Verifyemail() {
             <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, marginBottom: 12 }}>
               Check your inbox
             </h1>
-            <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.6, marginBottom: 28 }}>
-              We sent a verification link to your email address. Click it to activate
-              your account. The link expires in <strong style={{ color: '#e2e8f0' }}>10 minutes</strong>.
+            <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.6, marginBottom: 8 }}>
+              We sent a verification link to{' '}
+              {pendingEmail
+                ? <strong style={{ color: '#e2e8f0' }}>{pendingEmail}</strong>
+                : 'your email address'
+              }. Click it to activate your account.
             </p>
-            <p style={{ color: '#64748b', fontSize: 13, marginBottom: 32 }}>
-              Didn't receive it? Check your spam folder, or{' '}
+            <p style={{ color: '#64748b', fontSize: 13, marginBottom: 28 }}>
+              The link expires in <strong style={{ color: '#e2e8f0' }}>10 minutes</strong>.
+              Check your spam folder if you don&apos;t see it.
+            </p>
+
+            {/* Resend button */}
+            <div style={{ marginBottom: 28 }}>
               <button
                 onClick={handleResend}
+                disabled={resendState === 'sending' || countdown > 0}
                 style={{
-                  background: 'none', border: 'none', color: '#60a5fa',
-                  fontWeight: 600, cursor: 'pointer', fontSize: 13,
+                  background: resendState === 'sent' ? 'rgba(74,222,128,0.1)' : 'rgba(96,165,250,0.1)',
+                  border: `1px solid ${resendState === 'sent' ? '#4ade80' : '#60a5fa'}`,
+                  color: resendState === 'sent' ? '#4ade80' : '#60a5fa',
+                  fontWeight: 600,
+                  cursor: countdown > 0 || resendState === 'sending' ? 'not-allowed' : 'pointer',
+                  fontSize: 14,
+                  padding: '10px 24px',
+                  borderRadius: 10,
+                  opacity: countdown > 0 || resendState === 'sending' ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                  width: '100%',
                 }}
               >
-                request a new link
-              </button>.
-              {resent && (
-                <span style={{ color: '#4ade80', marginLeft: 8 }}>✓ Sent!</span>
+                {resendState === 'sending'
+                  ? '⏳ Sending…'
+                  : countdown > 0
+                    ? `Resend in ${countdown}s`
+                    : resendState === 'sent'
+                      ? '✓ Resent!'
+                      : 'Resend verification email'
+                }
+              </button>
+              {resendMsg && (
+                <p style={{
+                  marginTop: 8, fontSize: 13,
+                  color: resendState === 'error' ? '#f87171' : '#4ade80',
+                }}>
+                  {resendMsg}
+                </p>
               )}
-            </p>
+            </div>
+
             <Link
               to="/login"
               style={{

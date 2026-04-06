@@ -11,9 +11,9 @@ export const sendOTPMail = async (otp, email) => {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, '') : '',
       },
-      connectionTimeout: 5000,
-      socketTimeout: 5000,
-      greetingTimeout: 5000,
+      connectionTimeout: 30000,
+      socketTimeout: 30000,
+      greetingTimeout: 30000,
       tls: {
         rejectUnauthorized: false
       }

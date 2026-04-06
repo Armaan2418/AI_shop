@@ -132,7 +132,8 @@ export default function Register() {
         password: form.password,
       });
       // Backend only sends a verification email — no user/token returned.
-      // Reset loading state and send user to check their inbox.
+      // Store email so /verify-email page can offer resend without asking user to retype.
+      sessionStorage.setItem('pendingVerifyEmail', form.email.trim().toLowerCase());
       dispatch(loginFailure(null)); // clears loading, keeps state clean
       navigate('/verify-email');
     } catch (err) {
