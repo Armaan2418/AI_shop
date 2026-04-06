@@ -31,31 +31,23 @@ export const register = async (req, res) => {
       lastName: lName,
       email: email.toLowerCase(),
       password: hashedPassword,
-      isVerified: false,
+      isVerified: true, // Auto-verify — users can login immediately
     });
 
-    // Generate token
+    // Send welcome email in background — never blocks registration
     const token = jwt.sign(
       { id: newUser._id },
       process.env.EMAIL_TOKEN_SECRET,
-      { expiresIn: "10m" }
+      { expiresIn: "24h" }
     );
+    newUser.token = token;
+    newUser.save().catch(() => {});
 
-    try {
-      await sendVerificationEmail(token, email);
+    sendVerificationEmail(token, email)
+      .then(() => console.log("✅ Welcome email sent to:", email))
+      .catch((err) => console.warn("⚠️ Welcome email failed (non-fatal):", err.message));
 
-      newUser.token = token;
-      await newUser.save();
-
-      return res.status(201).json({ success: true, message: "Verification email sent!" });
-    } catch (emailError) {
-      console.error("Email Sending Error:", emailError);
-      await User.findByIdAndDelete(newUser._id);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send verification email. Please try again.",
-      });
-    }
+    return res.status(201).json({ success: true, message: "Account created successfully! You can now log in." });
   } catch (error) {
     console.error("General Register Error:", error);
     return res.status(500).json({ success: false, message: error.message });
