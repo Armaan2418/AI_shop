@@ -84,8 +84,8 @@ const startServer = async () => {
             console.log(`🚀 Server running at: http://localhost:${PORT}`);
         });
     } catch (error) {
-        console.error("❌ Server failed to start:");
-        // No process.exit(1) so Vercel Serverless doesn't permanently close 
+        console.error("❌ Server failed to start:", error.message);
+        process.exit(1); // Let Railway restart the service on failure
     }
 };
 
