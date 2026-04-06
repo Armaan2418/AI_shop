@@ -6,8 +6,8 @@ export const sendVerificationEmail = async (token, email) => {
     // 1. Create transporter inside function (more reliable for serverless)
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use TLS
+      port: 587,
+      secure: false, // true for 465, false for other ports (STARTTLS)
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS ? process.env.MAIL_PASS.replace(/\s+/g, '') : '', // Sanitize spaces
