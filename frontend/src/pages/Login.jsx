@@ -58,7 +58,7 @@ export default function Login() {
   const isAuth   = useSelector(selectIsAuth);
   const { loading, error } = useSelector((s) => s.auth);
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/dashboard';
   const successMsg = location.state?.successMsg || null;
 
   const [form,        setForm]        = useState({ email: '', password: '' });
@@ -72,9 +72,10 @@ export default function Login() {
     return () => clearTimeout(t);
   }, []);
 
+  // Only auto-redirect if already authenticated AND didn't just register
   useEffect(() => {
-    if (isAuth) navigate(from, { replace: true });
-  }, [isAuth, from, navigate]);
+    if (isAuth && !successMsg) navigate(from, { replace: true });
+  }, [isAuth, from, navigate, successMsg]);
 
   useEffect(() => {
     dispatch(clearError());
@@ -103,10 +104,11 @@ export default function Login() {
     dispatch(loginStart());
     try {
       const data = await authService.login({ email: form.email, password: form.password });
-      dispatch(loginSuccess({ user: data.user, token: data.token }));
-      navigate(from, { replace: true });
+      dispatch(loginSuccess({ user: data.user, token: data.token || data.accessToken }));
+      // Always go to dashboard after login
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      dispatch(loginFailure(err.message));
+      dispatch(loginFailure(err.message || 'Login failed. Check your credentials.'));
     }
   };
 

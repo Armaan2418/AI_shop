@@ -131,10 +131,15 @@ export default function Register() {
         email:    form.email.trim(),
         password: form.password,
       });
-      dispatch(loginFailure(null)); // clears loading
-      navigate('/login', { state: { successMsg: '✅ Account created! You can now sign in.' } });
+      // Clear loading state, then redirect to login with success banner
+      dispatch(clearError());
+      dispatch(loginFailure(null)); // resets loading to false
+      navigate('/login', {
+        state: { successMsg: '✅ Account created! Sign in below.' },
+        replace: true,
+      });
     } catch (err) {
-      dispatch(loginFailure(err.message));
+      dispatch(loginFailure(err.message || 'Registration failed. Please try again.'));
     }
   };
 
