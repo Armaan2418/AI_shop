@@ -219,20 +219,11 @@ export default function ChatBot() {
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
 
-  // ── Handle virtual keyboard on iOS — visualViewport keeps position:fixed correct ──
+  // ── Update --cb-vh whenever visual viewport resizes (keyboard open/close) ──
   useEffect(() => {
-    const panel = document.getElementById('chatbot-panel');
-
     const setVh = () => {
       const h = window.visualViewport?.height ?? window.innerHeight;
       document.documentElement.style.setProperty('--cb-vh', `${h}px`);
-
-      // When keyboard opens (viewport shrinks below 500px), switch panel to
-      // top-anchored layout so it doesn't collapse behind the keyboard.
-      if (panel) {
-        const keyboardOpen = h < 500;
-        panel.dataset.keyboard = keyboardOpen ? 'open' : 'closed';
-      }
     };
     setVh();
     window.visualViewport?.addEventListener('resize', setVh);
@@ -242,6 +233,39 @@ export default function ChatBot() {
       window.visualViewport?.removeEventListener('scroll', setVh);
     };
   }, []);
+
+  // ── iOS scroll lock — prevents page background from scrolling when panel ──
+  // is open. On iOS Safari, if the page scrolls (e.g. when keyboard opens),
+  // position:fixed elements visually move up with it. Locking body scroll
+  // prevents that and keeps the panel exactly in place.
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      document.body.style.position   = 'fixed';
+      document.body.style.top        = `-${scrollY}px`;
+      document.body.style.left       = '0';
+      document.body.style.right      = '0';
+      document.body.style.overflowY  = 'scroll'; // keep scrollbar width, avoid layout shift
+    } else {
+      const scrollY = parseFloat(document.body.style.top || '0') * -1;
+      document.body.style.position   = '';
+      document.body.style.top        = '';
+      document.body.style.left       = '';
+      document.body.style.right      = '';
+      document.body.style.overflowY  = '';
+      // Restore exact scroll position
+      window.scrollTo(0, scrollY);
+    }
+    return () => {
+      // Cleanup on unmount
+      document.body.style.position  = '';
+      document.body.style.top       = '';
+      document.body.style.left      = '';
+      document.body.style.right     = '';
+      document.body.style.overflowY = '';
+    };
+  }, [open]);
+
 
 
   // ── Scroll to latest message ──────────────────────────────────────────────

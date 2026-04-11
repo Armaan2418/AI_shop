@@ -810,18 +810,6 @@
     padding: 11px 14px;
     font-size: 13px;
   }
-
-  /* ── Keyboard open: switch from bottom-anchor to top-anchor ──────────────
-   * When iOS keyboard is open, the visual viewport shrinks to ~250-400px.
-   * bottom: 86px + height: calc(vh - 110px) = tiny panel almost behind keyboard.
-   * Fix: pin to top of visual viewport, fill all remaining space above keyboard.
-   */
-  .cb-panel[data-keyboard="open"] {
-    bottom: auto !important;
-    top: 8px !important;
-    height: calc(var(--cb-vh, 100dvh) - 8px) !important;
-    max-height: calc(var(--cb-vh, 100dvh) - 8px) !important;
-    border-radius: 14px !important;
-  }
 }
+
 
