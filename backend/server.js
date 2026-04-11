@@ -43,8 +43,10 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// ── Explicit OPTIONS preflight handler — required for iOS Safari —————————
-app.options('*', cors({
+// ── Explicit OPTIONS preflight handler — required for iOS Safari ─────────
+// NOTE: Express 5 + path-to-regexp v8 no longer accept bare '*' wildcards.
+// Use a regex /.*/ instead.
+app.options(/.*/, cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) return callback(null, true);
