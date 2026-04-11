@@ -91,20 +91,26 @@ app.get("/health", (_req, res) => {
 
 /**
  * 6. SERVER INITIALIZATION
+ * ─────────────────────────────────────────────────────────────────────────
+ * IMPORTANT: Start the HTTP server FIRST, then connect to MongoDB.
+ * Railway healthcheck hits '/' immediately after deploy. If we wait for DB
+ * first, the healthcheck times out and Railway kills the container.
+ * Binding to '0.0.0.0' is required — Railway won't route to 'localhost'.
  */
 const startServer = async () => {
+    // 1. Start HTTP server immediately so Railway healthcheck succeeds
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server running on 0.0.0.0:${PORT}`);
+    });
+
+    // 2. Connect to MongoDB in background — server stays alive either way
     try {
         await connectDB();
         console.log("✅ MongoDB Connected Successfully");
-
-        // Listen for Vercel Web Services or Local Dev
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running at: http://localhost:${PORT}`);
-        });
     } catch (error) {
-        console.error("❌ Server failed to start:", error.message);
-        process.exit(1); // Railway will auto-restart the service
-
+        console.error("❌ MongoDB connection failed (server still running):", error.message);
+        // Don't exit — let Railway keep the container alive.
+        // DB-dependent routes will return 500; healthcheck '/' still returns 200.
     }
 };
 
