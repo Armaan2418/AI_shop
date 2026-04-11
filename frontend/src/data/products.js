@@ -105,6 +105,33 @@ export const MOCK_PRODUCTS = [
   { _id: '101', name: 'Kaali Mirch (Black Pepper)', category: 'groceries', price: 150, originalPrice: null, rating: 4.9, reviewCount: 840, badge: 'Spice', inStock: true, brand: 'Organic Farms', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&q=80', noTax: true },
   // Scam
   { _id: '100', name: 'Air from the Moon',       category: 'scam',        price: 20,     originalPrice: 99999,  rating: 0.1, reviewCount: 80085,badge: 'SCAM',    inStock: true,  brand: 'TrustMeBro',image: 'https://images.unsplash.com/photo-1550616158-9a9978dbd9cb?w=500&q=80' },
+  // Royal Footwear
+  {
+    _id: '102',
+    name: "Rani Sa's Crocs",
+    category: 'fashion',
+    price: 100000,
+    originalPrice: null,
+    rating: 5.0,
+    reviewCount: 1,
+    badge: '👑 Royal',
+    inStock: true,
+    brand: 'Rani Sa Exclusive',
+    image: '/rani-sa-crocs.jpg',
+    deal: "Whoever makes them dirty wins them for free! 👑 Think you can do it?",
+    customSpecs: [
+      { label: 'Brand',         value: 'Rani Sa Exclusive' },
+      { label: 'Category',      value: 'Royal Footwear' },
+      { label: 'Price',         value: '₹1,00,000' },
+      { label: 'Heel',          value: 'Very Big (Royally Elevated)' },
+      { label: 'Material',      value: 'Premium Croslite™ Royal Edition' },
+      { label: 'Colour',        value: 'Mint Grey (Exclusive)' },
+      { label: 'Special Deal',  value: 'Whoever makes them dirty wins them for free!' },
+      { label: 'Warranty',      value: 'Lifetime (if kept clean)' },
+      { label: 'Rating',        value: '5.0 / 5 (1 Very Happy Rani Sa)' },
+      { label: 'Availability',  value: 'In Stock — Only 1 Pair in the World' },
+    ],
+  },
 ];
 
 // Explicit comparison groups — each array has 3 product IDs that make sense to compare
@@ -224,6 +251,9 @@ export const COMPARISON_MAP = {
 
 // Per-category spec templates for product detail pages
 export const getProductSpecs = (product) => {
+  // If the product has its own custom specs, use those directly
+  if (product.customSpecs && product.customSpecs.length > 0) return product.customSpecs;
+
   const specsByCategory = {
     phones: (() => {
       let ram = '8GB LPDDR4';

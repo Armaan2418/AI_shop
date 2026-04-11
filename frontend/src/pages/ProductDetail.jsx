@@ -625,6 +625,19 @@ export default function ProductDetail() {
               )}
             </div>
 
+            {/* Deal Banner — only shown when product has a deal */}
+            {product.deal && (
+              <div className="pdp__deal-banner">
+                <div className="pdp__deal-banner-glow" />
+                <span className="pdp__deal-crown">🌟</span>
+                <div className="pdp__deal-content">
+                  <div className="pdp__deal-title">Special Deal</div>
+                  <div className="pdp__deal-text">{product.deal}</div>
+                </div>
+                <span className="pdp__deal-tag">🏷️ Deal</span>
+              </div>
+            )}
+
             <div className="pdp__divider" />
 
             {/* Color picker */}
@@ -734,10 +747,11 @@ export default function ProductDetail() {
               { key: 'description', label: 'Description' },
               { key: 'features',    label: 'Specifications' },
               { key: 'reviews',     label: `Reviews (${product.reviews?.length ?? 0})` },
+              ...(product.deal ? [{ key: 'deal', label: '🏷️ Deal' }] : []),
             ].map(tab => (
               <button
                 key={tab.key}
-                className={`pdp__tab ${activeTab === tab.key ? 'pdp__tab--active' : ''}`}
+                className={`pdp__tab ${activeTab === tab.key ? 'pdp__tab--active' : ''} ${tab.key === 'deal' ? 'pdp__tab--deal' : ''}`}
                 onClick={() => setActiveTab(tab.key)}
               >
                 {tab.label}
@@ -863,6 +877,20 @@ export default function ProductDetail() {
                     </Link>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Deal Tab */}
+          {activeTab === 'deal' && product.deal && (
+            <div className="pdp__tab-panel">
+              <div className="pdp__deal-tab">
+                <div className="pdp__deal-tab-icon">🏷️</div>
+                <h3 className="pdp__deal-tab-title">Exclusive Deal</h3>
+                <p className="pdp__deal-tab-text">{product.deal}</p>
+                <div className="pdp__deal-tab-note">
+                  ⚠️ This is a binding offer. Dare to accept the challenge!
+                </div>
               </div>
             </div>
           )}

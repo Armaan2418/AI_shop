@@ -271,6 +271,18 @@ export default function Products() {
 
   const searchRef = useRef(null);
 
+  // Sync state when URL searchParams change (e.g. Navbar search navigating to /products?search=...)
+  useEffect(() => {
+    const urlSearch   = searchParams.get('search')   || '';
+    const urlCategory = searchParams.get('category') || 'All';
+    const urlSort     = searchParams.get('sort')     || 'featured';
+    setSearch(urlSearch);
+    setCategory(urlCategory);
+    setSort(urlSort);
+    if (searchParams.get('sort') === 'deals') setOnSale(true);
+    else setOnSale(false);
+  }, [searchParams]);
+
   useEffect(() => {
     const load = async () => {
       try {

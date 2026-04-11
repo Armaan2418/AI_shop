@@ -77,4 +77,6 @@ export const MOCK_PRODUCTS = [
   { _id: '89', name: 'Laura Mercier Setting Powder',category: 'makeup',   price: 3600,   originalPrice: null,   rating: 4.9, reviewCount: 2800, badge: 'AI Pick', inStock: true,  brand: 'Laura Mercier' },
   // Groceries
   { _id: '101', name: 'Kaali Mirch (Black Pepper)', category: 'groceries', price: 150, originalPrice: null, rating: 4.9, reviewCount: 840, badge: 'Spice', inStock: true, brand: 'Organic Farms', noTax: true },
+  // Royal Footwear
+  { _id: '102', name: "Rani Sa's Crocs", category: 'fashion', price: 100000, originalPrice: null, rating: 5.0, reviewCount: 1, badge: '👑 Royal', inStock: true, brand: 'Rani Sa Exclusive', deal: "Whoever makes them dirty wins them for free! 👑 Think you can do it?" },
 ];

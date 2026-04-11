@@ -764,13 +764,51 @@
   }
 
   .cb-panel {
+    /* Use dvh so panel shrinks when virtual keyboard opens */
     bottom: 86px;
     right: 12px;
     left: 12px;
     width: auto;
     max-width: none;
-    height: calc(100vh - 112px);
-    max-height: none;
+    /* Fallback for browsers without dvh support */
+    height: calc(100vh - 160px);
+    /* dvh = dynamic viewport height — shrinks when keyboard appears */
+    height: calc(100dvh - 110px);
+    max-height: 78dvh;
     border-radius: 18px;
+  }
+
+  /* Enlarge send button — easier to tap on phone */
+  .cb-send {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  /* Bigger input text on mobile */
+  .cb-input {
+    font-size: 15px;
+  }
+
+  /* Taller input area on mobile */
+  .cb-input-wrap {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  /* Safe area for phones with home indicator (iPhone) */
+  .cb-input-area {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  /* Hide footer hint text on mobile to save space */
+  .cb-input-footer {
+    display: none;
+  }
+
+  /* Chip buttons easier to tap */
+  .cb-chip {
+    padding: 11px 14px;
+    font-size: 13px;
   }
 }
