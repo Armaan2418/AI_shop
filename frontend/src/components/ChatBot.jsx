@@ -221,9 +221,18 @@ export default function ChatBot() {
 
   // ── Handle virtual keyboard on iOS — visualViewport keeps position:fixed correct ──
   useEffect(() => {
+    const panel = document.getElementById('chatbot-panel');
+
     const setVh = () => {
       const h = window.visualViewport?.height ?? window.innerHeight;
       document.documentElement.style.setProperty('--cb-vh', `${h}px`);
+
+      // When keyboard opens (viewport shrinks below 500px), switch panel to
+      // top-anchored layout so it doesn't collapse behind the keyboard.
+      if (panel) {
+        const keyboardOpen = h < 500;
+        panel.dataset.keyboard = keyboardOpen ? 'open' : 'closed';
+      }
     };
     setVh();
     window.visualViewport?.addEventListener('resize', setVh);
@@ -233,6 +242,7 @@ export default function ChatBot() {
       window.visualViewport?.removeEventListener('scroll', setVh);
     };
   }, []);
+
 
   // ── Scroll to latest message ──────────────────────────────────────────────
   const scrollToBottom = useCallback(() => {

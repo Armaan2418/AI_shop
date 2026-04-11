@@ -1,12 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './routes/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 // Layout
 import Navbar        from './components/Navbar';
 
 // Global floating components
 import CompareDrawer from './components/CompareDrawer';
-import ChatBot      from './components/ChatBot';
+import ChatBot       from './components/ChatBot';
 import VisualSearch  from './components/VisualSearch';
 
 // Public pages
@@ -30,6 +31,8 @@ import OrderTracking from './pages/OrderTracking';
 export default function App() {
   return (
     <BrowserRouter>
+      {/* Scroll to top on every route change */}
+      <ScrollToTop />
       <Navbar />
       <main>
         <Routes>
