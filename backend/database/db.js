@@ -2,16 +2,17 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
     try {
-        // ✅ Proper MongoDB connection
         const conn = await mongoose.connect(process.env.MONGO_URI, {
-            dbName: "Ekart" // ✅ database name here instead of string concat
+            dbName: "Ekart",
+            serverSelectionTimeoutMS: 10000, // fail fast — don't hang Railway healthcheck
+            socketTimeoutMS: 45000,
         });
 
         console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
 
     } catch (error) {
         console.error("❌ MongoDB connection failed:", error.message);
-        // Do not use process.exit(1) in Serverless environments
+        throw error; // let server.js handle this and call process.exit(1)
     }
 };
 

@@ -1,0 +1,11 @@
+# Railway Nixpacks configuration
+# Pins Node 20 and sets correct build + start commands
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install --omit=dev"]
+
+[start]
+cmd = "node server.js"

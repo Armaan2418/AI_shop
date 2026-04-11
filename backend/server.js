@@ -23,11 +23,10 @@ const allowedOrigins = [
     "http://localhost:5174",
     "http://localhost:5175",
 ];
-// Add production frontend URL from env (set this in Railway/Render)
+// Add production frontend URL from env (set this in Railway dashboard)
 if (process.env.FRONTEND_URL) {
-    allowedOrigins.push(process.env.FRONTEND_URL);
-    // Also allow without trailing slash variant
-    allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
+    const url = process.env.FRONTEND_URL.replace(/\/$/, '');
+    if (!allowedOrigins.includes(url)) allowedOrigins.push(url);
 }
 
 app.use(cors({
@@ -84,6 +83,12 @@ app.get("/", (req, res) => {
     });
 });
 
+// Dedicated health-check for Railway
+app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok", uptime: process.uptime() });
+});
+
+
 /**
  * 6. SERVER INITIALIZATION
  */
@@ -98,7 +103,8 @@ const startServer = async () => {
         });
     } catch (error) {
         console.error("❌ Server failed to start:", error.message);
-        process.exit(1); // Let Railway restart the service on failure
+        process.exit(1); // Railway will auto-restart the service
+
     }
 };
 

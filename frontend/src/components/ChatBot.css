@@ -85,7 +85,8 @@
   width: 400px;
   max-width: calc(100vw - 48px);
   height: 620px;
-  max-height: calc(100vh - 140px);
+  /* Use JS-set --cb-vh so the panel shrinks when keyboard opens on tablets */
+  max-height: calc(var(--cb-vh, 100vh) - 140px);
   background: #080d14;
   border-radius: 20px;
   box-shadow:
