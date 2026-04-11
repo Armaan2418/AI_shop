@@ -1,10 +1,11 @@
 // =====================================================
 //  API CONFIGURATION
-//  LOCAL:      set VITE_API_URL in frontend/.env.local
-//  PRODUCTION: set VITE_API_URL in Vercel env settings
+//  Vercel proxies /api/* → Railway backend (vercel.json)
+//  This avoids all CORS issues on iOS Safari.
 // =====================================================
 
-export const BASE_URL = 'https://aishop-production.up.railway.app/api/v1';
+export const BASE_URL = '/api/v1';
+
 
 // Attach JWT token to every request automatically
 const getHeaders = (isMultipart = false, customToken = null) => {

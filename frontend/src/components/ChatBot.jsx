@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ChatBot.css';
 
-const API_BASE = 'https://aishop-production.up.railway.app/api/v1/ai'; // v2 — Railway fixed
+const API_BASE = '/api/v1/ai'; // Proxied through Vercel → no CORS on iOS
+
 
 
 // ── Format ₹ price ───────────────────────────────────────────────────────────
