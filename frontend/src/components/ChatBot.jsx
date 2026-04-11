@@ -287,12 +287,19 @@ export default function ChatBot() {
     setMessages(prev => [...prev, { id: Date.now(), role: 'user', text: msg }]);
     setLoading(true);
 
+    // 30-second timeout — prevents silent hangs on slow mobile connections
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 30000);
+
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ msg, sessionId }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await res.json();
 
@@ -314,9 +321,15 @@ export default function ChatBot() {
       if (!open) setUnread(u => u + 1);
 
     } catch (err) {
-      const errMsg = err.message?.includes('Failed to fetch')
-        ? "Can't reach the server — make sure the backend is running."
-        : err.message || 'Something went wrong. Try again!';
+      clearTimeout(timeoutId);
+      // Map browser-specific network errors to friendly messages
+      const raw = err.message || '';
+      const errMsg =
+        err.name === 'AbortError'
+          ? 'Request timed out. Check your connection and try again.'
+          : raw.includes('Failed to fetch') || raw.includes('Load failed') || raw.includes('NetworkError')
+            ? "Couldn't reach Ava's server. Check your connection and try again."
+            : raw || 'Something went wrong. Try again!';
       setError(errMsg);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,

@@ -40,7 +40,20 @@ app.use(cors({
         callback(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// ── Explicit OPTIONS preflight handler — required for iOS Safari —————————
+app.options('*', cors({
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        if (origin.endsWith('.vercel.app')) return callback(null, true);
+        callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
