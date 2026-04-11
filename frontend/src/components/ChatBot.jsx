@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ChatBot.css';
 
-const API_BASE = 'https://aishop-production.up.railway.app/api/v1/ai';
+const API_BASE = 'https://aishop-production.up.railway.app/api/v1/ai'; // v2 — Railway fixed
+
 
 // ── Format ₹ price ───────────────────────────────────────────────────────────
 const fmt = (n) => `₹${Number(n).toLocaleString('en-IN')}`;
@@ -326,10 +327,11 @@ export default function ChatBot() {
       const raw = err.message || '';
       const errMsg =
         err.name === 'AbortError'
-          ? 'Request timed out. Check your connection and try again.'
+          ? 'Request timed out (30s). Check your connection and try again.'
           : raw.includes('Failed to fetch') || raw.includes('Load failed') || raw.includes('NetworkError')
             ? "Couldn't reach Ava's server. Check your connection and try again."
             : raw || 'Something went wrong. Try again!';
+
       setError(errMsg);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
