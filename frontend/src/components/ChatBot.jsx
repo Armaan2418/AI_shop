@@ -217,6 +217,21 @@ export default function ChatBot() {
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
 
+  // ── Handle virtual keyboard on iOS — visualViewport keeps position:fixed correct ──
+  useEffect(() => {
+    const setVh = () => {
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--cb-vh', `${h}px`);
+    };
+    setVh();
+    window.visualViewport?.addEventListener('resize', setVh);
+    window.visualViewport?.addEventListener('scroll', setVh);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', setVh);
+      window.visualViewport?.removeEventListener('scroll', setVh);
+    };
+  }, []);
+
   // ── Scroll to latest message ──────────────────────────────────────────────
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

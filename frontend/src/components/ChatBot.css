@@ -770,11 +770,9 @@
     left: 12px;
     width: auto;
     max-width: none;
-    /* Fallback for browsers without dvh support */
-    height: calc(100vh - 160px);
-    /* dvh = dynamic viewport height — shrinks when keyboard appears */
-    height: calc(100dvh - 110px);
-    max-height: 78dvh;
+    /* Fallback chain: JS-set variable → dvh → vh */
+    height: calc(var(--cb-vh, 100dvh) - 110px);
+    max-height: calc(var(--cb-vh, 100dvh) - 110px);
     border-radius: 18px;
   }
 
